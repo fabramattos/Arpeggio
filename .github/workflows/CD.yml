@@ -1,0 +1,54 @@
+# Se testes passaram, irá realizar merge na Master.
+# Faz o build e deploy da nova Imagem Docker no DockerHub.
+name: CD
+
+on:
+  pull_request:
+    branches:
+      - master
+    types:
+      - closed
+
+jobs:
+  deploy_se_merge_executado:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          distribution: 'temurin'
+
+      - name: Set up Gradle
+        uses: gradle/gradle-build-action@v2.10.0
+
+      - name: Concede permissoes
+        run: chmod +x ./gradlew
+
+      - name: Gradle Clean
+        run: ./gradlew clean
+
+      - name: Gradle Build Sem Testes
+        run: ./gradlew build -x test
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push to DockerHub
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile-prod
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/primusicos-api:latest
