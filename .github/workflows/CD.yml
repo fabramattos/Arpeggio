@@ -1,6 +1,6 @@
 # Se testes passaram, irá realizar merge na Master.
 # Faz o build e deploy da nova Imagem Docker no DockerHub.
-name: CD
+name: Build, Deploy DockerHub
 
 on:
   pull_request:
