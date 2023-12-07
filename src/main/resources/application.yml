@@ -1,0 +1,6 @@
+# configurações para executar localmente
+
+secrets:
+  spotify_API:
+    id: ${SPOTIFY_API_CLIENT_ID}
+    secret: ${SPOTIFY_API_CLIENT_SECRET}
