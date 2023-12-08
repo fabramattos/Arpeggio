@@ -1,10 +1,15 @@
 package br.com.primusicos.api.service
+
+import br.com.primusicos.api.domain.RespostaApp
 import org.springframework.stereotype.Service
+
 @Service
 class BuscaService(val spotifyService: SpotifyService) {
-    fun buscaArtista(nome: String): String {
-        val resposta = spotifyService.buscaPorArtista(nome)
-        println(resposta)
-        return "requisição para API agregadora feita com sucesso para: $nome"
-    }
+
+    fun buscaPorArtista(nome: String) =
+        RespostaApp(
+            listOf(
+                spotifyService.buscaPorArtista(nome)
+            )
+        )
 }

@@ -1,5 +1,6 @@
 package br.com.primusicos.api.service
 
+import br.com.primusicos.api.domain.RespostaPorStreaming
 import br.com.primusicos.api.domain.spotify.SpotifyArtist
 import br.com.primusicos.api.domain.spotify.SpotifyResponseAlbum
 import br.com.primusicos.api.domain.spotify.SpotifyResponseAuthetication
@@ -23,6 +24,7 @@ class SpotifyService(
 
     private var TOKEN: String? = null,
     private var HEADER_VALUE: String? = null,
+    private val NOME_STREAMING: String = "Spotify"
 ) {
 
 
@@ -57,7 +59,7 @@ class SpotifyService(
     private fun encontraIdArtista(nome: String, artistas: List<SpotifyArtist>) = artistas
         .filter { it.name.equals(nome, true) }
         .map { it.id }
-        .first()
+        .firstOrNull()
 
     private fun buscaQuantidadeDeAlbuns(idArtista: String): SpotifyResponseAlbum {
         val uri = UriComponentsBuilder
@@ -77,13 +79,20 @@ class SpotifyService(
             ?: throw RuntimeException("Falha ao buscar artista")
     }
 
-    fun buscaPorArtista(nome: String): SpotifyResponseAlbum {
+    fun buscaPorArtista(nome: String): RespostaPorStreaming {
         if (TOKEN.isNullOrEmpty())
             atualizaToken()
 
         val artistas: List<SpotifyArtist> = buscaArtistas(nome)
+        if(artistas.isEmpty())
+            return RespostaPorStreaming(NOME_STREAMING, nome, 0)
+
         val idArtista = encontraIdArtista(nome, artistas)
-        return buscaQuantidadeDeAlbuns(idArtista)
+        if(idArtista.isNullOrEmpty())
+            return RespostaPorStreaming(NOME_STREAMING, nome, 0)
+
+        val totalDeAlbuns = buscaQuantidadeDeAlbuns(idArtista).total
+        return RespostaPorStreaming(NOME_STREAMING, nome, totalDeAlbuns)
     }
 
 }
