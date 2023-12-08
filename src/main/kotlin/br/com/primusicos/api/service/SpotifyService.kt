@@ -1,6 +1,9 @@
 package br.com.primusicos.api.service
 
-import br.com.primusicos.api.domain.RespostaPorStreaming
+import br.com.primusicos.api.Infra.exception.*
+import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
+import br.com.primusicos.api.domain.resultado.ResultadoBuscaOk
+import br.com.primusicos.api.domain.resultado.ResultadoBusca
 import br.com.primusicos.api.domain.spotify.SpotifyArtist
 import br.com.primusicos.api.domain.spotify.SpotifyResponseAlbum
 import br.com.primusicos.api.domain.spotify.SpotifyResponseAuthetication
@@ -36,7 +39,7 @@ class SpotifyService(
             .retrieve()
             .bodyToMono<SpotifyResponseAuthetication>() //PODE CRIAR UMA CLASSE DTO NESTE PONTO PARA TRATA A RESPOSTA
             .block()
-            ?: throw RuntimeException("Falha ao recuperar Token do Spotify")
+            ?: throw FalhaAoRecuperarTokenException()
 
     private fun atualizaToken() {
         TOKEN = autentica().access_token
@@ -46,20 +49,28 @@ class SpotifyService(
     private fun buscaArtistas(nome: String): List<SpotifyArtist> {
         val nomeArtista = nome.replace(" ", "+")
 
-        return webClient.get()
-            .uri("https://api.spotify.com/v1/search?q=${nomeArtista}&type=artist&market=BR&limit=3")
-            .header("Authorization", HEADER_VALUE)
-            .retrieve()
-            .bodyToMono<SpotifyResponseBusca>()
-            .map { it.artists.items }
-            .block()
-            ?: throw RuntimeException("Falha ao buscar artista")
+        return webClient
+            .get()
+                .uri("https://api.spotify.com/v1/search?q=${nomeArtista}&type=artist&market=BR&limit=3")
+                .header("Authorization", HEADER_VALUE)
+                .retrieve()
+                .bodyToMono<SpotifyResponseBusca>()
+                .map { it.artists.items }
+                .block()
+            ?: throw FalhaAoBuscarArtistasException()
     }
 
-    private fun encontraIdArtista(nome: String, artistas: List<SpotifyArtist>) = artistas
-        .filter { it.name.equals(nome, true) }
-        .map { it.id }
-        .firstOrNull()
+    private fun encontraIdArtista(nome: String, artistas: List<SpotifyArtist>): String {
+        val id = artistas
+            .find { it.name.equals(nome, true) }
+            ?.id
+
+        if (id.isNullOrEmpty())
+            throw ArtistaNaoEncontradoException()
+
+        return id
+    }
+
 
     private fun buscaQuantidadeDeAlbuns(idArtista: String): SpotifyResponseAlbum {
         val uri = UriComponentsBuilder
@@ -70,29 +81,30 @@ class SpotifyService(
             .toUri()
         println(uri)
 
-        return webClient.get()
-            .uri(uri)
-            .header("Authorization", HEADER_VALUE)
-            .retrieve()
-            .bodyToMono<SpotifyResponseAlbum>()
-            .block()
-            ?: throw RuntimeException("Falha ao buscar artista")
+        return webClient
+            .get()
+                .uri(uri)
+                .header("Authorization", HEADER_VALUE)
+                .retrieve()
+                .bodyToMono<SpotifyResponseAlbum>()
+                .block()
+            ?: throw FalhaAoBuscarAlbunsDoArtista()
     }
 
-    fun buscaPorArtista(nome: String): RespostaPorStreaming {
+    fun buscaPorArtista(nome: String): ResultadoBusca {
         if (TOKEN.isNullOrEmpty())
             atualizaToken()
 
-        val artistas: List<SpotifyArtist> = buscaArtistas(nome)
-        if(artistas.isEmpty())
-            return RespostaPorStreaming(NOME_STREAMING, nome, 0)
+        var totalDeAlbuns = 0
+        val busca = runCatching {
+            val artistas: List<SpotifyArtist> = buscaArtistas(nome)
+            val idArtista = encontraIdArtista(nome, artistas)
+            totalDeAlbuns = buscaQuantidadeDeAlbuns(idArtista).total
+        }
 
-        val idArtista = encontraIdArtista(nome, artistas)
-        if(idArtista.isNullOrEmpty())
-            return RespostaPorStreaming(NOME_STREAMING, nome, 0)
+        busca.onFailure {return ResultadoBuscaErros(NOME_STREAMING, busca.exceptionOrNull()!!.localizedMessage) }
 
-        val totalDeAlbuns = buscaQuantidadeDeAlbuns(idArtista).total
-        return RespostaPorStreaming(NOME_STREAMING, nome, totalDeAlbuns)
+        return ResultadoBuscaOk(NOME_STREAMING, totalDeAlbuns)
     }
 
 }
