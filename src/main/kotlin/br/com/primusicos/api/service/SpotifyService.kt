@@ -25,10 +25,14 @@ class SpotifyService(
     @Value("\${secrets.spotify_API.secret}")
     private val SPOTIFY_API_SECRET: String,
 
-    private var TOKEN: String? = null,
     private var HEADER_VALUE: String? = null,
     private val NOME_STREAMING: String = "Spotify"
 ) {
+    private var TOKEN: String? = null
+        private set(value) {
+            field = value
+            HEADER_VALUE = "Bearer $TOKEN"
+        }
 
 
     private fun autentica(): SpotifyResponseAuthetication =
@@ -40,11 +44,6 @@ class SpotifyService(
             .bodyToMono<SpotifyResponseAuthetication>() //PODE CRIAR UMA CLASSE DTO NESTE PONTO PARA TRATA A RESPOSTA
             .block()
             ?: throw FalhaAoRecuperarTokenException()
-
-    private fun atualizaToken() {
-        TOKEN = autentica().access_token
-        HEADER_VALUE = "Bearer $TOKEN"
-    }
 
     private fun buscaArtistas(nome: String): List<SpotifyArtist> {
         val nomeArtista = nome.replace(" ", "+")
@@ -93,7 +92,7 @@ class SpotifyService(
 
     fun buscaPorArtista(nome: String): ResultadoBusca {
         if (TOKEN.isNullOrEmpty())
-            atualizaToken()
+            TOKEN = autentica().access_token
 
         var totalDeAlbuns = 0
         val busca = runCatching {
