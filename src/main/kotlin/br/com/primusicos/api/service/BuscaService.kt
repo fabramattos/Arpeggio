@@ -1,8 +1,9 @@
 package br.com.primusicos.api.service
 
-import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
 import br.com.primusicos.api.domain.resultado.Resultado
+import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaOk
+import br.com.primusicos.api.utilitario.tratarBuscaArtista
 import org.springframework.stereotype.Service
 
 @Service
@@ -13,10 +14,11 @@ class BuscaService(
 ) {
 
     fun buscaPorArtista(nome: String): Resultado {
+        val nomeTratado = nome.tratarBuscaArtista()
         listaErros = mutableListOf()
         listaResultados = mutableListOf()
 
-        val busca = spotifyService.buscaPorArtista(nome)
+        val busca = spotifyService.buscaPorArtista(nomeTratado)
 
         if (busca is ResultadoBuscaOk)
             listaResultados = listaResultados.plus(busca)
@@ -24,7 +26,7 @@ class BuscaService(
         if (busca is ResultadoBuscaErros)
             listaErros = listaErros.plus(busca)
 
-        return Resultado(nome, listaResultados, listaErros)
+        return Resultado(nomeTratado, listaResultados, listaErros)
 
     }
 }
