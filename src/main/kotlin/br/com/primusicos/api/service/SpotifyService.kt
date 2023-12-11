@@ -1,9 +1,12 @@
 package br.com.primusicos.api.service
 
-import br.com.primusicos.api.Infra.exception.*
+import br.com.primusicos.api.Infra.exception.ArtistaNaoEncontradoException
+import br.com.primusicos.api.Infra.exception.FalhaAoBuscarAlbunsDoArtista
+import br.com.primusicos.api.Infra.exception.FalhaAoBuscarArtistasException
+import br.com.primusicos.api.Infra.exception.FalhaAoRecuperarTokenException
+import br.com.primusicos.api.domain.resultado.ResultadoBusca
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaOk
-import br.com.primusicos.api.domain.resultado.ResultadoBusca
 import br.com.primusicos.api.domain.spotify.SpotifyArtist
 import br.com.primusicos.api.domain.spotify.SpotifyResponseAlbum
 import br.com.primusicos.api.domain.spotify.SpotifyResponseAuthetication
@@ -46,11 +49,9 @@ class SpotifyService(
             ?: throw FalhaAoRecuperarTokenException()
 
     private fun buscaArtistas(nome: String): List<SpotifyArtist> {
-        val nomeArtista = nome.replace(" ", "+")
-
         return webClient
             .get()
-                .uri("https://api.spotify.com/v1/search?q=${nomeArtista}&type=artist&market=BR&limit=3")
+                .uri("https://api.spotify.com/v1/search?q=${nome}&type=artist&market=BR&limit=3")
                 .header("Authorization", HEADER_VALUE)
                 .retrieve()
                 .bodyToMono<SpotifyResponseBusca>()
