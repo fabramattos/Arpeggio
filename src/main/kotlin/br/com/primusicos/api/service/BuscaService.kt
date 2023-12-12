@@ -10,30 +10,23 @@ import org.springframework.stereotype.Service
 class BuscaService(
     val spotifyService: SpotifyService,
     val deezerService: DeezerService,
-    var listaResultados: List<ResultadoBuscaOk>,
-    var listaErros: List<ResultadoBuscaErros>,
+    val commandStreamingAudio: List<CommandStreamingAudio> = listOf(deezerService, spotifyService)
 ) {
 
     fun buscaPorArtista(nome: String): Resultado {
         val nomeBusca = nome.tratarBuscaArtista()
+        var listaResultados = emptyList<ResultadoBuscaOk>()
+        var listaErros = emptyList<ResultadoBuscaErros>()
 
-        listaErros = mutableListOf()
-        listaResultados = mutableListOf()
+        commandStreamingAudio.forEach { streaming ->
+            val busca = streaming.buscaPorArtista(nome)
 
-        val busca = spotifyService.buscaPorArtista(nomeBusca)
-        val busca2 = deezerService.buscaPorArtista(nomeBusca)
+            if (busca is ResultadoBuscaOk)
+                listaResultados = listaResultados.plus(busca)
 
-        if (busca is ResultadoBuscaOk)
-            listaResultados = listaResultados.plus(busca)
-
-        if (busca is ResultadoBuscaErros)
-            listaErros = listaErros.plus(busca)
-
-        if (busca2 is ResultadoBuscaOk)
-            listaResultados = listaResultados.plus(busca2)
-
-        if (busca2 is ResultadoBuscaErros)
-            listaErros = listaErros.plus(busca2)
+            if (busca is ResultadoBuscaErros)
+                listaErros = listaErros.plus(busca)
+        }
 
         return Resultado(nomeBusca, listaResultados, listaErros)
 
