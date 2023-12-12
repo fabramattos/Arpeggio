@@ -72,7 +72,7 @@ class SpotifyService(
     }
 
 
-    private fun buscaQuantidadeDeAlbuns(idArtista: String): SpotifyResponseAlbum {
+    private fun buscaAlbunsDoArtista(idArtista: String): SpotifyResponseAlbum {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.spotify.com/v1/artists/{id}/albums")
             .queryParam("include_groups", "album,single")
@@ -99,7 +99,7 @@ class SpotifyService(
         val busca = runCatching {
             val artistas: List<SpotifyArtist> = buscaArtistas(nome)
             val idArtista = encontraIdArtista(nome, artistas)
-            totalDeAlbuns = buscaQuantidadeDeAlbuns(idArtista).total
+            totalDeAlbuns = buscaAlbunsDoArtista(idArtista).total
         }
 
         busca.onFailure {return ResultadoBuscaErros(NOME_STREAMING, busca.exceptionOrNull()!!.localizedMessage) }
