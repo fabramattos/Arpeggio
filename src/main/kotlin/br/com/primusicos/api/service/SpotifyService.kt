@@ -49,9 +49,18 @@ class SpotifyService(
             ?: throw FalhaAoRecuperarTokenException()
 
     private fun buscaArtistas(nome: String): List<SpotifyArtist> {
+        val uri = UriComponentsBuilder
+            .fromUriString("https://api.spotify.com/v1/search")
+            .queryParam("q", nome)
+            .queryParam("type", "artist")
+            .queryParam("market", "BR")
+            .queryParam("limit", 3)
+            .buildAndExpand()
+            .toUri()
+
         return webClient
             .get()
-                .uri("https://api.spotify.com/v1/search?q=${nome}&type=artist&market=BR&limit=3")
+                .uri(uri)
                 .header("Authorization", HEADER_VALUE)
                 .retrieve()
                 .bodyToMono<SpotifyResponseBusca>()
@@ -74,10 +83,10 @@ class SpotifyService(
 
     private fun buscaAlbunsDoArtista(idArtista: String): SpotifyResponseAlbum {
         val uri = UriComponentsBuilder
-            .fromUriString("https://api.spotify.com/v1/artists/{id}/albums")
+            .fromUriString("https://api.spotify.com/v1/artists/${idArtista}/albums")
             .queryParam("include_groups", "album,single")
             .queryParam("limit", 1)
-            .buildAndExpand(idArtista)
+            .buildAndExpand()
             .toUri()
         println(uri)
 

@@ -1,7 +1,7 @@
 package br.com.primusicos.api.service
 
-import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
 import br.com.primusicos.api.domain.resultado.Resultado
+import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaOk
 import br.com.primusicos.api.utilitario.tratarBuscaArtista
 import org.springframework.stereotype.Service
@@ -19,7 +19,7 @@ class BuscaService(
         var listaErros = emptyList<ResultadoBuscaErros>()
 
         commandStreamingAudio.forEach { streaming ->
-            val busca = streaming.buscaPorArtista(nome)
+            val busca = streaming.buscaPorArtista(nomeBusca)
 
             if (busca is ResultadoBuscaOk)
                 listaResultados = listaResultados.plus(busca)

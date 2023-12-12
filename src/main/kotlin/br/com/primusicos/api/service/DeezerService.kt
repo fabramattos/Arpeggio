@@ -21,15 +21,22 @@ class DeezerService(
     private val NOME_STREAMING: String = "Deezer",
 ) : CommandStreamingAudio {
 
-    private fun buscaArtistas(nome: String): List<DeezerArtist> =
-        webClient
+    private fun buscaArtistas(nome: String): List<DeezerArtist> {
+        val uri = UriComponentsBuilder
+            .fromUriString("https://api.deezer.com/search/artist")
+            .queryParam("q", nome)
+            .buildAndExpand()
+            .toUri()
+
+        return webClient
             .get()
-            .uri("https://api.deezer.com/search/artist?q=${nome}")
+            .uri(uri)
             .retrieve()
             .bodyToMono<DeezerResponseArtists>()
             .map { it.data }
             .block()
             ?: throw FalhaAoBuscarArtistasException()
+    }
 
     private fun encontraIdArtista(nome: String, artistas: List<DeezerArtist>) =
         artistas
@@ -39,9 +46,9 @@ class DeezerService(
 
     private fun buscaAlbunsDoArtista(idArtista: Int): List<DeezerAlbum> {
         val uri = UriComponentsBuilder
-            .fromUriString("https://api.deezer.com/artist/{id}/albums")
+            .fromUriString("https://api.deezer.com/artist/$idArtista/albums")
             .queryParam("limit", 999)
-            .buildAndExpand(idArtista)
+            .buildAndExpand()
             .toUri()
         println(uri)
 
@@ -54,7 +61,7 @@ class DeezerService(
             .block()
             ?.filter {
                 it.record_type.equals("album", true)
-                || it.record_type.equals("single", true)
+                        || it.record_type.equals("single", true)
             }
             ?: throw FalhaAoBuscarAlbunsDoArtista()
     }
