@@ -30,7 +30,7 @@ class SpotifyService(
 
     private var HEADER_VALUE: String? = null,
     private val NOME_STREAMING: String = "Spotify"
-) {
+) : CommandStreamingAudio {
     private var TOKEN: String? = null
         private set(value) {
             field = value
@@ -44,7 +44,7 @@ class SpotifyService(
             .contentType(MediaType.APPLICATION_FORM_URLENCODED)
             .bodyValue("grant_type=client_credentials&client_id=${SPOTIFY_API_ID}&client_secret=${SPOTIFY_API_SECRET}")
             .retrieve()
-            .bodyToMono<SpotifyResponseAuthetication>() //PODE CRIAR UMA CLASSE DTO NESTE PONTO PARA TRATA A RESPOSTA
+            .bodyToMono<SpotifyResponseAuthetication>()
             .block()
             ?: throw FalhaAoRecuperarTokenException()
 
@@ -91,7 +91,7 @@ class SpotifyService(
             ?: throw FalhaAoBuscarAlbunsDoArtista()
     }
 
-    fun buscaPorArtista(nome: String): ResultadoBusca {
+    override fun buscaPorArtista(nome: String): ResultadoBusca {
         if (TOKEN.isNullOrEmpty())
             TOKEN = autentica().access_token
 

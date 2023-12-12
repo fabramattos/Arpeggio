@@ -19,7 +19,7 @@ import org.springframework.web.util.UriComponentsBuilder
 class DeezerService(
     private val webClient: WebClient,
     private val NOME_STREAMING: String = "Deezer",
-) {
+) : CommandStreamingAudio {
 
     private fun buscaArtistas(nome: String): List<DeezerArtist> =
         webClient
@@ -39,7 +39,7 @@ class DeezerService(
 
     private fun buscaAlbunsDoArtista(idArtista: Int): List<DeezerAlbum> {
         val uri = UriComponentsBuilder
-            .fromUriString("https://api.deezer.com/artist/${idArtista}/albums")
+            .fromUriString("https://api.deezer.com/artist/{id}/albums")
             .queryParam("limit", 999)
             .buildAndExpand(idArtista)
             .toUri()
@@ -55,12 +55,11 @@ class DeezerService(
             ?.filter {
                 it.record_type.equals("album", true)
                 || it.record_type.equals("single", true)
-//                || it.record_type.equals("EP", true)
             }
             ?: throw FalhaAoBuscarAlbunsDoArtista()
     }
 
-    fun buscaPorArtista(nome: String): ResultadoBusca {
+    override fun buscaPorArtista(nome: String): ResultadoBusca {
         var totalDeAlbuns = 0
         val busca = runCatching {
             val artistas: List<DeezerArtist> = buscaArtistas(nome)
