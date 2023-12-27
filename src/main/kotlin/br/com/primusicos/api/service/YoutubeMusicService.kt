@@ -37,7 +37,7 @@ class YoutubeMusicService(
 
     private fun executaSelenium(nome: String) : Int {
         val options = EdgeOptions()
-        //options.addArguments("--headless")  // Execute sem abrir uma janela do navegador
+        options.addArguments("--headless=new")  // Execute sem abrir uma janela do navegador
         options.setBinary(EDGE_LOCATION)
 
         val driver = EdgeDriver(options)
