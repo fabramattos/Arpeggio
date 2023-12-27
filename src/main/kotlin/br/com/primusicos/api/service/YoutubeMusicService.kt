@@ -25,6 +25,7 @@ class YoutubeMusicService(
 
 
     override fun buscaPorArtista(nome: String): ResultadoBusca {
+        println("Consultando YouTube")
         var totalDeAlbuns = 0
         val busca = runCatching {
             totalDeAlbuns = executaSelenium(nome)
@@ -83,8 +84,6 @@ class YoutubeMusicService(
             """.trimIndent()
 
         val result = (driver as JavascriptExecutor).executeScript(script) as Long
-        // Imprimir o resultado
-        println("Número de álbuns no YouTube: $result")
 
         return result.toInt()
     }

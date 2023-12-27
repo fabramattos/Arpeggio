@@ -88,7 +88,6 @@ class SpotifyService(
             .queryParam("limit", 1)
             .buildAndExpand()
             .toUri()
-        println(uri)
 
         return webClient
             .get()
@@ -101,6 +100,7 @@ class SpotifyService(
     }
 
     override fun buscaPorArtista(nome: String): ResultadoBusca {
+        println("Consultando Spotify")
         if (TOKEN.isNullOrEmpty())
             TOKEN = autentica().access_token
 
