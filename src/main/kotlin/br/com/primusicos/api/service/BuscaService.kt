@@ -19,6 +19,9 @@ class BuscaService(
         var listaResultados = emptyList<ResultadoBuscaOk>()
         var listaErros = emptyList<ResultadoBuscaErros>()
 
+
+        println("Nome Buscado: $nomeBusca")
+
         commandStreamingAudio.forEach { streaming ->
             val busca = streaming.buscaPorArtista(nomeBusca)
 

@@ -50,7 +50,6 @@ class DeezerService(
             .queryParam("limit", 999)
             .buildAndExpand()
             .toUri()
-        println(uri)
 
         return webClient
             .get()
@@ -67,6 +66,7 @@ class DeezerService(
     }
 
     override fun buscaPorArtista(nome: String): ResultadoBusca {
+        println("Consultando Deezer")
         var totalDeAlbuns = 0
         val busca = runCatching {
             val artistas: List<DeezerArtist> = buscaArtistas(nome)
