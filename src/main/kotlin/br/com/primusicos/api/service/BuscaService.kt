@@ -10,7 +10,8 @@ import org.springframework.stereotype.Service
 class BuscaService(
     val spotifyService: SpotifyService,
     val deezerService: DeezerService,
-    val commandStreamingAudio: List<CommandStreamingAudio> = listOf(deezerService, spotifyService)
+    val youtubeMusicService: YoutubeMusicService,
+    val commandStreamingAudio: List<CommandStreamingAudio> = listOf(deezerService, spotifyService, youtubeMusicService)
 ) {
 
     fun buscaPorArtista(nome: String): Resultado {
