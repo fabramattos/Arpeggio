@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "br.com.primusicos"
-version = "1.0"
+version = "1.1"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -16,7 +16,6 @@ java {
 
 repositories {
     mavenCentral()
-    maven ("https://jitpack.io")
 }
 
 dependencies {
@@ -25,6 +24,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.seleniumhq.selenium:selenium-java:4.16.1")
+    //automação para executar o docker-compose ao rodar springboot app
+    developmentOnly("org.springframework.boot:spring-boot-docker-compose")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.10.0")
 }
