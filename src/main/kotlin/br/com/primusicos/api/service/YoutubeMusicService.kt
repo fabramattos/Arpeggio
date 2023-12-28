@@ -50,10 +50,12 @@ class YoutubeMusicService(
     private fun executaSelenium(): Int {
         val options = ChromeOptions()
         // funcionamento headless com problema ao rodar via Remote Web Driver. Com drivers locais funciona.
+
         //options.addArguments("headless=new")
         options.addArguments("--ignore-ssl-errors=yes")
         options.addArguments("--ignore-certificate-errors")
         options.addArguments("--lang=pt-BR") // garantindo que o navegador use pt-br independente de onde é instanciado.
+
 
         var qtdeAlbuns = 0
 
