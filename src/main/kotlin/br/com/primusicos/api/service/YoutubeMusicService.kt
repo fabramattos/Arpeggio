@@ -18,6 +18,8 @@ import java.net.URL
 
 @Service
 class YoutubeMusicService(
+    private var nomeArtista: String?,
+
     @Value("\${chrome.url}")
     private val CHROME_URL: String,
 
@@ -25,7 +27,7 @@ class YoutubeMusicService(
     private val CHROME_PORT: String,
 
     private val NOME_STREAMING: String = "YouTube Music",
-    private val SELETOR_CSS_BOTAO_ARTISTA: String = "#chips > ytmusic-chip-cloud-chip-renderer:nth-child(6) > div > a",
+    private val SELETOR_XPATH_BOTAO_ARTISTA: String = "//yt-formatted-string[text()='Artistas']",
     private val SELETOR_CSS_ALBUNS_DO_ARTISTA: String = "#details > yt-formatted-string",
     private val SELETOR_CSS_LISTA_ARTISTAS: String = "#contents > ytmusic-grid-renderer",
     private var driver: RemoteWebDriver?,
@@ -34,9 +36,10 @@ class YoutubeMusicService(
 
     override fun buscaPorArtista(nome: String): ResultadoBusca {
         println("Consultando YouTube")
+        nomeArtista = nome
         var totalDeAlbuns = 0
         val busca = runCatching {
-            totalDeAlbuns = executaSelenium(nome)
+            totalDeAlbuns = executaSelenium()
         }
 
         busca.onFailure { return ResultadoBuscaErros(NOME_STREAMING, busca.exceptionOrNull()!!.localizedMessage) }
@@ -44,14 +47,15 @@ class YoutubeMusicService(
         return ResultadoBuscaOk(NOME_STREAMING, totalDeAlbuns)
     }
 
-    private fun executaSelenium(nome: String): Int {
+    private fun executaSelenium(): Int {
         val options = ChromeOptions()
         // funcionamento headless com problema ao rodar via Remote Web Driver. Com drivers locais funciona.
-//        options.addArguments("headless=new")
-        options.addArguments("window-size=1920,1080")
+
+        //options.addArguments("headless=new")
         options.addArguments("--ignore-ssl-errors=yes")
         options.addArguments("--ignore-certificate-errors")
-        options.addArguments("-'--disable-dev-shm-usage',")
+        options.addArguments("--lang=pt-BR") // garantindo que o navegador use pt-br independente de onde é instanciado.
+
 
         var qtdeAlbuns = 0
 
@@ -61,12 +65,12 @@ class YoutubeMusicService(
 
             driver?.let {
                 val wait: Wait<WebDriver> = WebDriverWait(it, java.time.Duration.ofSeconds(10))
-                val url = "https://music.youtube.com/search?q=$nome"
+                val url = "https://music.youtube.com/search?q=$nomeArtista"
 
                 // Acesse a URL
                 it.get(url)
                 cliqueBotaoArtista(wait)
-                cliqueNoArtistaDaLista(wait, nome)
+                cliqueNoArtistaDaLista(wait)
                 cliqueBotaoAlbumDoArtista(wait)
                 qtdeAlbuns = calculaTotalDeAlbuns(wait)
             } ?: throw RuntimeException("Erro ao criar o Selenium Remote WebDriver")
@@ -111,10 +115,10 @@ class YoutubeMusicService(
         .until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(SELETOR_CSS_ALBUNS_DO_ARTISTA)))
         .click()
 
-    private fun cliqueNoArtistaDaLista(wait: Wait<WebDriver>, nome: String) {
+    private fun cliqueNoArtistaDaLista(wait: Wait<WebDriver>) {
 
         val artistLink = wait
-            .until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("a[aria-label='$nome' i]")))
+            .until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("a[aria-label='$nomeArtista' i]")))
             .getAttribute("href")
 
         driver
@@ -123,7 +127,7 @@ class YoutubeMusicService(
     }
 
     private fun cliqueBotaoArtista(wait: Wait<WebDriver>) = wait
-        .until(ExpectedConditions.elementToBeClickable(By.cssSelector(SELETOR_CSS_BOTAO_ARTISTA)))
+        .until(ExpectedConditions.presenceOfElementLocated(By.xpath(SELETOR_XPATH_BOTAO_ARTISTA)))
         .click()
 
 }
