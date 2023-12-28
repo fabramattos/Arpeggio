@@ -48,6 +48,7 @@ services:
       - selenium-network
     depends_on:
       - chrome-alone
-
+    env_file:
+      - .env
 networks:
   selenium-network:
