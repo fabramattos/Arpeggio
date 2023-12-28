@@ -4,3 +4,8 @@ secrets:
   spotify_API:
     id: ${SPOTIFY_API_CLIENT_ID}
     secret: ${SPOTIFY_API_CLIENT_SECRET}
+
+chrome:
+  url: ${CHROME_URL:http://localhost}
+  port: ${CHROME_PORT:4444}
+
