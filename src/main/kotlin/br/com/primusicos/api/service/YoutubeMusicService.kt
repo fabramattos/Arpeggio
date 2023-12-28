@@ -49,8 +49,9 @@ class YoutubeMusicService(
         // funcionamento headless com problema ao rodar via Remote Web Driver. Com drivers locais funciona.
 //        options.addArguments("headless=new")
 //        options.addArguments("window-size=1920,1080")
-        options.addArguments("ignore-ssl-errors=yes")
-        options.addArguments("ignore-certificate-errors")
+        options.addArguments("--ignore-ssl-errors=yes")
+        options.addArguments("--ignore-certificate-errors")
+        options.addArguments("--no-sandbox")
 
         var qtdeAlbuns = 0
 
