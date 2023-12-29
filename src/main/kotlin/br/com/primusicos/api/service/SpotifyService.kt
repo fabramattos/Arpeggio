@@ -1,9 +1,6 @@
 package br.com.primusicos.api.service
 
-import br.com.primusicos.api.Infra.exception.ArtistaNaoEncontradoException
-import br.com.primusicos.api.Infra.exception.FalhaAoBuscarAlbunsDoArtista
-import br.com.primusicos.api.Infra.exception.FalhaAoBuscarArtistasException
-import br.com.primusicos.api.Infra.exception.FalhaAoRecuperarTokenException
+import br.com.primusicos.api.Infra.exception.*
 import br.com.primusicos.api.domain.resultado.ResultadoBusca
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaOk
@@ -20,6 +17,7 @@ import org.springframework.web.util.UriComponentsBuilder
 
 @Service
 class SpotifyService(
+    private val NOME_STREAMING: String = "Spotify",
     private val webClient: WebClient,
 
     @Value("\${secrets.spotify_API.id}")
@@ -29,7 +27,6 @@ class SpotifyService(
     private val SPOTIFY_API_SECRET: String,
 
     private var HEADER_VALUE: String? = null,
-    private val NOME_STREAMING: String = "Spotify"
 ) : CommandStreamingAudio {
     private var TOKEN: String? = null
         private set(value) {
@@ -60,12 +57,12 @@ class SpotifyService(
 
         return webClient
             .get()
-                .uri(uri)
-                .header("Authorization", HEADER_VALUE)
-                .retrieve()
-                .bodyToMono<SpotifyResponseBusca>()
-                .map { it.artists.items }
-                .block()
+            .uri(uri)
+            .header("Authorization", HEADER_VALUE)
+            .retrieve()
+            .bodyToMono<SpotifyResponseBusca>()
+            .map { it.artists.items }
+            .block()
             ?: throw FalhaAoBuscarArtistasException()
     }
 
@@ -91,11 +88,11 @@ class SpotifyService(
 
         return webClient
             .get()
-                .uri(uri)
-                .header("Authorization", HEADER_VALUE)
-                .retrieve()
-                .bodyToMono<SpotifyResponseAlbum>()
-                .block()
+            .uri(uri)
+            .header("Authorization", HEADER_VALUE)
+            .retrieve()
+            .bodyToMono<SpotifyResponseAlbum>()
+            .block()
             ?: throw FalhaAoBuscarAlbunsDoArtista()
     }
 
@@ -104,18 +101,28 @@ class SpotifyService(
         if (TOKEN.isNullOrEmpty())
             TOKEN = autentica().access_token
 
-        var totalDeAlbuns = 0
-        val busca = runCatching {
-            val artistas: List<SpotifyArtist> = buscaArtistas(nome)
-            val idArtista = encontraIdArtista(nome, artistas)
-            totalDeAlbuns = buscaAlbunsDoArtista(idArtista).total
-        }
-
-        busca.onFailure {return ResultadoBuscaErros(NOME_STREAMING, busca.exceptionOrNull()!!.localizedMessage) }
-
-        return ResultadoBuscaOk(NOME_STREAMING, totalDeAlbuns)
+        return tentaBuscarPorArtista(nome)
     }
 
+
+    private fun tentaBuscarPorArtista(nome: String): ResultadoBusca {
+        repeat(3) {
+            try {
+                val artistas: List<SpotifyArtist> = buscaArtistas(nome)
+                val idArtista = encontraIdArtista(nome, artistas)
+                val totalDeAlbuns = buscaAlbunsDoArtista(idArtista).total
+                return ResultadoBuscaOk(NOME_STREAMING, totalDeAlbuns)
+            } catch (e: Exception) {
+                if (e.localizedMessage.contains("401 Unauthorized", true)) {
+                    println("Erro no ${NOME_STREAMING} | Tentativa $it | Erro: 401 Unauthorized")
+                    TOKEN = autentica().access_token
+                } else
+                    println("Erro no ${NOME_STREAMING} | Tentativa $it | Erro: $e.localizedMessage")
+
+            }
+        }
+        return ResultadoBuscaErros(NOME_STREAMING, FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).toString())
+    }
 }
 
 

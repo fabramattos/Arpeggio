@@ -3,6 +3,7 @@ package br.com.primusicos.api.service
 import br.com.primusicos.api.Infra.exception.ArtistaNaoEncontradoException
 import br.com.primusicos.api.Infra.exception.FalhaAoBuscarAlbunsDoArtista
 import br.com.primusicos.api.Infra.exception.FalhaAoBuscarArtistasException
+import br.com.primusicos.api.Infra.exception.FalhaNaRequisicaoAoStreamingException
 import br.com.primusicos.api.domain.resultado.ResultadoBusca
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaOk
@@ -65,19 +66,24 @@ class DeezerService(
             ?: throw FalhaAoBuscarAlbunsDoArtista()
     }
 
-    override fun buscaPorArtista(nome: String): ResultadoBusca {
-        println("Consultando Deezer")
-        var totalDeAlbuns = 0
-        val busca = runCatching {
-            val artistas: List<DeezerArtist> = buscaArtistas(nome)
-            val idArtista = encontraIdArtista(nome, artistas)
-            totalDeAlbuns = buscaAlbunsDoArtista(idArtista).size
+    override fun buscaPorArtista(nome: String): ResultadoBusca = tentaBuscarPorArtista(nome)
+
+    private fun tentaBuscarPorArtista(nome: String): ResultadoBusca {
+        repeat(3){
+            try {
+                val artistas: List<DeezerArtist> = buscaArtistas(nome)
+
+                val idArtista = encontraIdArtista(nome, artistas)
+                val totalDeAlbuns = buscaAlbunsDoArtista(idArtista).size
+                return ResultadoBuscaOk(NOME_STREAMING, totalDeAlbuns)
+            }catch (e: Exception){
+                println("Erro no ${NOME_STREAMING} | Tentativa $it | Erro: $e.localizedMessage")
+            }
         }
-
-        busca.onFailure { return ResultadoBuscaErros(NOME_STREAMING, busca.exceptionOrNull()!!.localizedMessage) }
-
-        return ResultadoBuscaOk(NOME_STREAMING, totalDeAlbuns)
+        return ResultadoBuscaErros(NOME_STREAMING, FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).toString())
     }
+
+
 
 }
 
