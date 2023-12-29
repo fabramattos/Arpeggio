@@ -36,15 +36,16 @@ class YoutubeMusicService(
 
     override fun buscaPorArtista(nome: String): ResultadoBusca {
         println("Consultando YouTube")
-        nomeArtista = nome
-        var totalDeAlbuns = 0
-        val busca = runCatching {
-            totalDeAlbuns = executaSelenium()
-        }
-
-        busca.onFailure { return ResultadoBuscaErros(NOME_STREAMING, busca.exceptionOrNull()!!.localizedMessage) }
-
-        return ResultadoBuscaOk(NOME_STREAMING, totalDeAlbuns)
+        return ResultadoBuscaErros(NOME_STREAMING,"Desativado na API temporariamente")
+//        nomeArtista = nome
+//        var totalDeAlbuns = 0
+//        val busca = runCatching {
+//            totalDeAlbuns = executaSelenium()
+//        }
+//
+//        busca.onFailure { return ResultadoBuscaErros(NOME_STREAMING, busca.exceptionOrNull()!!.localizedMessage) }
+//
+//        return ResultadoBuscaOk(NOME_STREAMING, totalDeAlbuns)
     }
 
     private fun executaSelenium(): Int {
