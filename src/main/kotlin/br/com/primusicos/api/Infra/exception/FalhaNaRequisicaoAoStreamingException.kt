@@ -2,7 +2,5 @@ package br.com.primusicos.api.Infra.exception
 
 import java.lang.RuntimeException
 
-class FalhaNaRequisicaoAoStreamingException(
-    private val nomeStreaming: String,
-    msg: String = "Falha na comunicação com $nomeStreaming!",
-) : RuntimeException(msg)
+class FalhaNaRequisicaoAoStreamingException(nomeStreaming: String)
+    : RuntimeException("Falha na comunicação com $nomeStreaming!")

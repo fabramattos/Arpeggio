@@ -3,7 +3,7 @@ package br.com.primusicos.api.service
 import br.com.primusicos.api.Infra.exception.*
 import br.com.primusicos.api.domain.resultado.ResultadoBusca
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
-import br.com.primusicos.api.domain.resultado.ResultadoBuscaOk
+import br.com.primusicos.api.domain.resultado.ResultadoBuscaStreaming
 import br.com.primusicos.api.domain.spotify.SpotifyArtist
 import br.com.primusicos.api.domain.spotify.SpotifyResponseAlbum
 import br.com.primusicos.api.domain.spotify.SpotifyResponseAuthetication
@@ -111,17 +111,19 @@ class SpotifyService(
                 val artistas: List<SpotifyArtist> = buscaArtistas(nome)
                 val idArtista = encontraIdArtista(nome, artistas)
                 val totalDeAlbuns = buscaAlbunsDoArtista(idArtista).total
-                return ResultadoBuscaOk(NOME_STREAMING, totalDeAlbuns)
+                return ResultadoBuscaStreaming(NOME_STREAMING, totalDeAlbuns)
+            } catch (e: ArtistaNaoEncontradoException){
+                return ResultadoBuscaErros(NOME_STREAMING, e.localizedMessage)
             } catch (e: Exception) {
-                if (e.localizedMessage.contains("401 Unauthorized", true)) {
+                if (e.localizedMessage.contains("401")) {
                     println("Erro no ${NOME_STREAMING} | Tentativa $it | Erro: 401 Unauthorized")
                     TOKEN = autentica().access_token
                 } else
-                    println("Erro no ${NOME_STREAMING} | Tentativa $it | Erro: $e.localizedMessage")
-
+                    println("Erro no ${NOME_STREAMING} | Tentativa $it | Erro: ${e.localizedMessage}")
+                Thread.sleep(1000)
             }
         }
-        return ResultadoBuscaErros(NOME_STREAMING, FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).toString())
+        return ResultadoBuscaErros(NOME_STREAMING, FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).localizedMessage)
     }
 }
 
