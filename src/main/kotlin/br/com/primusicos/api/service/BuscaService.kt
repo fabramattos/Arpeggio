@@ -1,8 +1,8 @@
 package br.com.primusicos.api.service
 
+import br.com.primusicos.api.Infra.exception.BuscaEmBrancoException
 import br.com.primusicos.api.domain.resultado.Resultado
-import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
-import br.com.primusicos.api.domain.resultado.ResultadoBuscaOk
+import br.com.primusicos.api.domain.resultado.ResultadoBusca
 import br.com.primusicos.api.utilitario.tratarBuscaArtista
 import org.springframework.stereotype.Service
 
@@ -15,24 +15,22 @@ class BuscaService(
 ) {
 
     fun buscaPorArtista(nome: String): Resultado {
-        val nomeBusca = nome.tratarBuscaArtista()
-        var listaResultados = emptyList<ResultadoBuscaOk>()
-        var listaErros = emptyList<ResultadoBuscaErros>()
+        var nomeBusca = ""
+        var listaResultados = emptyList<ResultadoBusca>()
 
+        val operacao = runCatching {
+            if (nome.isBlank())
+                throw BuscaEmBrancoException()
 
-        println("Nome Buscado: $nomeBusca")
+            nomeBusca = nome.tratarBuscaArtista()
+            println("Nome Buscado: $nomeBusca")
 
-        commandStreamingAudio.forEach { streaming ->
-            val busca = streaming.buscaPorArtista(nomeBusca)
-
-            if (busca is ResultadoBuscaOk)
+            commandStreamingAudio.forEach { streaming ->
+                val busca = streaming.buscaPorArtista(nomeBusca)
                 listaResultados = listaResultados.plus(busca)
-
-            if (busca is ResultadoBuscaErros)
-                listaErros = listaErros.plus(busca)
+            }
         }
 
-        return Resultado(nomeBusca, listaResultados, listaErros)
-
+        return Resultado(nomeBusca, listaResultados, operacao.exceptionOrNull()?.localizedMessage)
     }
 }

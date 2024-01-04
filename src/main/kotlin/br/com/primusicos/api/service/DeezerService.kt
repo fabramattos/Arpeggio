@@ -6,7 +6,7 @@ import br.com.primusicos.api.Infra.exception.FalhaAoBuscarArtistasException
 import br.com.primusicos.api.Infra.exception.FalhaNaRequisicaoAoStreamingException
 import br.com.primusicos.api.domain.resultado.ResultadoBusca
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
-import br.com.primusicos.api.domain.resultado.ResultadoBuscaOk
+import br.com.primusicos.api.domain.resultado.ResultadoBuscaStreaming
 import br.com.primusicos.api.domain.streamings.deezer.DeezerAlbum
 import br.com.primusicos.api.domain.streamings.deezer.DeezerArtist
 import br.com.primusicos.api.domain.streamings.deezer.DeezerResponseAlbum
@@ -75,12 +75,15 @@ class DeezerService(
 
                 val idArtista = encontraIdArtista(nome, artistas)
                 val totalDeAlbuns = buscaAlbunsDoArtista(idArtista).size
-                return ResultadoBuscaOk(NOME_STREAMING, totalDeAlbuns)
+                return ResultadoBuscaStreaming(NOME_STREAMING, totalDeAlbuns)
+            }catch (e: ArtistaNaoEncontradoException) {
+                return ResultadoBuscaErros(NOME_STREAMING, e.localizedMessage)
             }catch (e: Exception){
                 println("Erro no ${NOME_STREAMING} | Tentativa $it | Erro: $e.localizedMessage")
+                Thread.sleep(1000)
             }
         }
-        return ResultadoBuscaErros(NOME_STREAMING, FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).toString())
+        return ResultadoBuscaErros(NOME_STREAMING, FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).localizedMessage)
     }
 
 

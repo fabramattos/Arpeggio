@@ -24,8 +24,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.seleniumhq.selenium:selenium-java:4.16.1")
-    //automação para executar o docker-compose ao rodar springboot app
-    developmentOnly("org.springframework.boot:spring-boot-docker-compose")
+    //automação para executar o docker-compose ao rodar springboot app no desenvolvimento
+    //developmentOnly("org.springframework.boot:spring-boot-docker-compose")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.10.0")
 }

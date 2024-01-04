@@ -2,7 +2,6 @@ package br.com.primusicos.api.service
 
 import br.com.primusicos.api.domain.resultado.ResultadoBusca
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
-import br.com.primusicos.api.domain.resultado.ResultadoBuscaOk
 import org.openqa.selenium.By
 import org.openqa.selenium.JavascriptExecutor
 import org.openqa.selenium.WebDriver
