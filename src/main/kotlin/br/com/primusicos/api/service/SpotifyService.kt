@@ -20,10 +20,10 @@ class SpotifyService(
     private val NOME_STREAMING: String = "Spotify",
     private val webClient: WebClient,
 
-    @Value("\${secrets.spotify_API.id}")
+    @Value("\${secrets.spotify_api.id}")
     private val SPOTIFY_API_ID: String,
 
-    @Value("\${secrets.spotify_API.secret}")
+    @Value("\${secrets.spotify_api.secret}")
     private val SPOTIFY_API_SECRET: String,
 
     private var HEADER_VALUE: String? = null,
