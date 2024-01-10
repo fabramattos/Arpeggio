@@ -1,9 +1,12 @@
 # configurações para executar localmente
 
 secrets:
-  spotify_API:
+  spotify_api:
     id: ${SPOTIFY_API_CLIENT_ID}
     secret: ${SPOTIFY_API_CLIENT_SECRET}
+  tidal_api:
+    id: ${TIDAL_API_CLIENT_ID}
+    secret: ${TIDAL_API_CLIENT_SECRET}
 
 chrome:
   url: ${CHROME_URL:http://localhost}

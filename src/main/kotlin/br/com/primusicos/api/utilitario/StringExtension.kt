@@ -1,5 +1,7 @@
 package br.com.primusicos.api.utilitario
 
+import java.util.Base64
+
 /**
  * Remove espaços em branco demasiados da string. Retorna com apenas um " " entre as palavras, quando aplicável.
  */
@@ -13,4 +15,8 @@ fun String.tratarBuscaArtista() : String {
     resposta = resposta.removeSuffix(" ")
 
     return resposta
+}
+
+fun String.toBase64(): String {
+    return Base64.getEncoder().encodeToString(toByteArray())
 }
