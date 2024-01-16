@@ -1,4 +1,6 @@
-# configurações para executar localmente
+springdoc:
+  swagger-ui:
+    path: /doc/swagger-ui
 
 secrets:
   spotify_api:

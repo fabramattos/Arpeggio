@@ -1,4 +1,4 @@
-package br.com.primusicos.api.Infra
+package br.com.primusicos.api.Infra.configuration
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
