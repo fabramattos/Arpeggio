@@ -1,9 +1,10 @@
 package br.com.primusicos.api.service
 
+import br.com.primusicos.api.Infra.busca.BuscaRequest
 import br.com.primusicos.api.Infra.exception.*
 import br.com.primusicos.api.domain.resultado.ResultadoBusca
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
-import br.com.primusicos.api.domain.resultado.ResultadoBuscaStreaming
+import br.com.primusicos.api.domain.resultado.ResultadoBuscaConcluida
 import br.com.primusicos.api.domain.spotify.SpotifyArtist
 import br.com.primusicos.api.domain.spotify.SpotifyResponseAlbum
 import br.com.primusicos.api.domain.spotify.SpotifyResponseAuthetication
@@ -17,6 +18,7 @@ import org.springframework.web.util.UriComponentsBuilder
 
 @Service
 class SpotifyService(
+    private val buscaRequest: BuscaRequest,
     private val NOME_STREAMING: String = "Spotify",
     private val webClient: WebClient,
 
@@ -96,22 +98,22 @@ class SpotifyService(
             ?: throw FalhaAoBuscarAlbunsDoArtista()
     }
 
-    override fun buscaPorArtista(nome: String): ResultadoBusca {
+    override fun buscaPorArtista(): ResultadoBusca {
         println("Consultando Spotify")
         if (TOKEN.isNullOrEmpty())
             TOKEN = autentica().access_token
 
-        return tentaBuscarPorArtista(nome)
+        return tentaBuscarPorArtista()
     }
 
 
-    private fun tentaBuscarPorArtista(nome: String): ResultadoBusca {
+    private fun tentaBuscarPorArtista(): ResultadoBusca {
         repeat(3) {
             try {
-                val artistas: List<SpotifyArtist> = buscaArtistas(nome)
-                val idArtista = encontraIdArtista(nome, artistas)
+                val artistas: List<SpotifyArtist> = buscaArtistas(buscaRequest.busca)
+                val idArtista = encontraIdArtista(buscaRequest.busca, artistas)
                 val totalDeAlbuns = buscaAlbunsDoArtista(idArtista).total
-                return ResultadoBuscaStreaming(NOME_STREAMING, totalDeAlbuns)
+                return ResultadoBuscaConcluida(NOME_STREAMING, totalDeAlbuns)
             } catch (e: ArtistaNaoEncontradoException){
                 return ResultadoBuscaErros(NOME_STREAMING, e.localizedMessage)
             } catch (e: Exception) {

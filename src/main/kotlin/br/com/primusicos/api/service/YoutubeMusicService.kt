@@ -33,7 +33,7 @@ class YoutubeMusicService(
 ) : CommandStreamingAudio {
 
 
-    override fun buscaPorArtista(nome: String): ResultadoBusca {
+    override fun buscaPorArtista(): ResultadoBusca {
         println("Consultando YouTube")
         return ResultadoBuscaErros(NOME_STREAMING,"Desativado na API temporariamente")
 //        nomeArtista = nome

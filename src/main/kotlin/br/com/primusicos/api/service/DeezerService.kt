@@ -1,12 +1,13 @@
 package br.com.primusicos.api.service
 
+import br.com.primusicos.api.Infra.busca.BuscaRequest
 import br.com.primusicos.api.Infra.exception.ArtistaNaoEncontradoException
 import br.com.primusicos.api.Infra.exception.FalhaAoBuscarAlbunsDoArtista
 import br.com.primusicos.api.Infra.exception.FalhaAoBuscarArtistasException
 import br.com.primusicos.api.Infra.exception.FalhaNaRequisicaoAoStreamingException
 import br.com.primusicos.api.domain.resultado.ResultadoBusca
+import br.com.primusicos.api.domain.resultado.ResultadoBuscaConcluida
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
-import br.com.primusicos.api.domain.resultado.ResultadoBuscaStreaming
 import br.com.primusicos.api.domain.streamings.deezer.DeezerAlbum
 import br.com.primusicos.api.domain.streamings.deezer.DeezerArtist
 import br.com.primusicos.api.domain.streamings.deezer.DeezerResponseAlbum
@@ -18,6 +19,7 @@ import org.springframework.web.util.UriComponentsBuilder
 
 @Service
 class DeezerService(
+    private val buscaRequest: BuscaRequest,
     private val webClient: WebClient,
     private val NOME_STREAMING: String = "Deezer",
 ) : CommandStreamingAudio {
@@ -66,16 +68,16 @@ class DeezerService(
             ?: throw FalhaAoBuscarAlbunsDoArtista()
     }
 
-    override fun buscaPorArtista(nome: String): ResultadoBusca = tentaBuscarPorArtista(nome)
+    override fun buscaPorArtista(): ResultadoBusca = tentaBuscarPorArtista()
 
-    private fun tentaBuscarPorArtista(nome: String): ResultadoBusca {
+    private fun tentaBuscarPorArtista(): ResultadoBusca {
         repeat(3){
             try {
-                val artistas: List<DeezerArtist> = buscaArtistas(nome)
+                val artistas: List<DeezerArtist> = buscaArtistas(buscaRequest.busca)
 
-                val idArtista = encontraIdArtista(nome, artistas)
+                val idArtista = encontraIdArtista(buscaRequest.busca, artistas)
                 val totalDeAlbuns = buscaAlbunsDoArtista(idArtista).size
-                return ResultadoBuscaStreaming(NOME_STREAMING, totalDeAlbuns)
+                return ResultadoBuscaConcluida(NOME_STREAMING, totalDeAlbuns)
             }catch (e: ArtistaNaoEncontradoException) {
                 return ResultadoBuscaErros(NOME_STREAMING, e.localizedMessage)
             }catch (e: Exception){
