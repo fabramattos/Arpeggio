@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 
 @JsonSubTypes(
     JsonSubTypes.Type(value = ResultadoBuscaErros::class),
-    JsonSubTypes.Type(value = ResultadoBuscaStreaming::class)
+    JsonSubTypes.Type(value = ResultadoBuscaConcluida::class)
 )
 
 interface ResultadoBusca{val streaming: String}
