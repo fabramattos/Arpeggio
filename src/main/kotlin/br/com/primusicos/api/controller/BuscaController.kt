@@ -6,13 +6,11 @@ import br.com.primusicos.api.service.BuscaService
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Schema
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("v1")
+@CrossOrigin("https://arpejo.up.railway.app/doc/swagger-ui/index.html")
 class BuscaController(val service: BuscaService) {
 
     @GetMapping("/artista")
