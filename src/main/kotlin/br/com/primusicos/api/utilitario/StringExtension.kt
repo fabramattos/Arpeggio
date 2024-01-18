@@ -7,7 +7,7 @@ import java.util.Base64
  */
 fun String.tratarBuscaArtista() : String {
     val split: List<String> = this.split(" ")
-    val filtrado = split.filterNot { it.isEmpty() }
+    val filtrado = split.filter { it.isNotEmpty() }
     var resposta = ""
 
     filtrado.forEach{resposta = resposta.plus(it) + " "}

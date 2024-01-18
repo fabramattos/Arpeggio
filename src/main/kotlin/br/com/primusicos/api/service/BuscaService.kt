@@ -36,12 +36,15 @@ class BuscaService(
             println("Nome Buscado: $nomeBusca")
 
             val tipos: List<BuscaTipo> = tipo
+                .replace(" ","")
                 .split(",")
+                .filter { it.isNotBlank() }
                 .map { BuscaTipo.valueOf(it.uppercase()) }
 
             buscaRequest.busca = nomeBusca
             buscaRequest.regiao = regiao
             buscaRequest.tipos =  tipos
+
             commandStreamingAudio.forEach { streaming ->
                 val busca = streaming.buscaPorArtista()
                 listaResultados = listaResultados.plus(busca)

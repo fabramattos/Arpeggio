@@ -61,9 +61,9 @@ class DeezerService(
             .bodyToMono<DeezerResponseAlbum>()
             .map { it.data }
             .block()
-            ?.filter {
-                it.record_type.equals("album", true)
-                        || it.record_type.equals("single", true)
+            ?.filter {album ->
+                buscaRequest.tipos.any { tipo ->
+                    album.record_type.equals(tipo.name, true) }
             }
             ?: throw FalhaAoBuscarAlbunsDoArtista()
     }
@@ -87,9 +87,6 @@ class DeezerService(
         }
         return ResultadoBuscaErros(NOME_STREAMING, FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).localizedMessage)
     }
-
-
-
 }
 
 
