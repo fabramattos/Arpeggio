@@ -43,10 +43,7 @@ class SpringDocConfigurations {
         source.registerCorsConfiguration("/v1/artista/**", config)
         source.registerCorsConfiguration("/doc/swagger-ui/**", config)
 
-
-        return CorsFilter(source)
+      return CorsFilter(source)
     }
-
-
 
 }
