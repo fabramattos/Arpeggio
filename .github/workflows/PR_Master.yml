@@ -1,4 +1,4 @@
-name: Testes para PR
+name: 'PR Master: Executa Testes'
 
 on:
   pull_request:
