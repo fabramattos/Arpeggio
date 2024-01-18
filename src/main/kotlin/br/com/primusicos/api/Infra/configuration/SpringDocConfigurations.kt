@@ -6,7 +6,8 @@ import io.swagger.v3.oas.models.info.Info
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.cors.CorsConfiguration
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
+import org.springframework.web.cors.reactive.CorsWebFilter
 import org.springframework.web.filter.CorsFilter
 
 
@@ -30,20 +31,33 @@ class SpringDocConfigurations {
             }
         })
 
-    @Bean
-    fun corsFilter(): CorsFilter {
-        val source = UrlBasedCorsConfigurationSource()
+//    @Bean
+//    fun corsFilter(): CorsFilter {
+//        val source = UrlBasedCorsConfigurationSource()
+//
+//        val config = CorsConfiguration()
+//        config.allowCredentials = true
+//        config.addAllowedOrigin("https://arpeggio.up.railway.app/**")
+//        config.addAllowedHeader("*")
+//        config.addAllowedMethod("*")
+//
+//        source.registerCorsConfiguration("/v1/artista/**", config)
+//        source.registerCorsConfiguration("/doc/swagger-ui/**", config)
+//
+//      return CorsFilter(source)
+//    }
 
+    @Bean
+    fun corsWebFilter(): CorsWebFilter {
+        val source = UrlBasedCorsConfigurationSource()
         val config = CorsConfiguration()
+
         config.allowCredentials = true
-        config.addAllowedOrigin("https://arpeggio.up.railway.app/**")
+        config.addAllowedOrigin("*")
         config.addAllowedHeader("*")
         config.addAllowedMethod("*")
-
-        source.registerCorsConfiguration("/v1/artista/**", config)
-        source.registerCorsConfiguration("/doc/swagger-ui/**", config)
-
-      return CorsFilter(source)
+        source.registerCorsConfiguration("/**", config)
+        return CorsWebFilter(source)
     }
 
 }
