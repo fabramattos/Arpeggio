@@ -1,4 +1,6 @@
-name: Build, Test, and Deploy DockerHub
+# Para push direto na master (segurança 'rules' desabilitada)
+
+name: 'Push Master: Build, Test, Deploy DockerHub'
 
 on:
   push:
