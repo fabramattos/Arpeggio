@@ -36,7 +36,9 @@ class SpringDocConfigurations {
         val config = CorsConfiguration()
 
         config.allowCredentials = true
-        config.addAllowedOrigin("https://arpeggio.up.railway.app/**")
+
+        // por  padrão swagger faz requisição sem o "s" do http
+        config.addAllowedOrigin("http://arpeggio.up.railway.app/**")
         config.addAllowedHeader("*")
         config.addAllowedMethod("*")
         source.registerCorsConfiguration("/v1/artista/**", config)
