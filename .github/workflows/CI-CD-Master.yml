@@ -49,4 +49,4 @@ jobs:
           context: .
           file: ./Dockerfile-prod
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/primusicos-api:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/arpeggio-api:latest
