@@ -1,6 +1,7 @@
 package br.com.primusicos.api.service
 
 import br.com.primusicos.api.Infra.busca.BuscaRequest
+import br.com.primusicos.api.Infra.busca.BuscaTipo
 import br.com.primusicos.api.Infra.exception.*
 import br.com.primusicos.api.domain.resultado.ResultadoBusca
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
@@ -134,9 +135,9 @@ class SpotifyService(
 
     private fun retornaTipos(): String {
         var texto = ""
-        buscaRequest.tipos.forEach {
-            texto = texto.plus(it.name + ",")
-        }
+        buscaRequest.tipos
+            .filterNot { it == BuscaTipo.EP } // -> Spotify não filtra EP! Single = Single + EP
+            .forEach { texto = texto.plus(it.name + ",") }
         texto = texto.removeSuffix(",")
         return texto
     }

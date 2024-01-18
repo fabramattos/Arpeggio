@@ -36,14 +36,15 @@ class BuscaService(
             println("Nome Buscado: $nomeBusca")
 
             val tipos: List<BuscaTipo> = tipo
-                .replace(" ","")
+                .replace(" ", "")
                 .split(",")
-                .filter { it.isNotBlank() }
+                .filter {it.equals("album", true) || it.equals("single", true) }
                 .map { BuscaTipo.valueOf(it.uppercase()) }
+                .let { if (BuscaTipo.SINGLE in it ) it + BuscaTipo.EP else it }
 
             buscaRequest.busca = nomeBusca
             buscaRequest.regiao = regiao
-            buscaRequest.tipos =  tipos
+            buscaRequest.tipos = tipos
 
             commandStreamingAudio.forEach { streaming ->
                 val busca = streaming.buscaPorArtista()
@@ -51,8 +52,8 @@ class BuscaService(
             }
         }
 
-        operacao.onFailure{ return Resultado(nomeBusca, emptyList(), it.localizedMessage)}
+        operacao.onFailure { return Resultado(nomeBusca, emptyList(), it.localizedMessage) }
 
-        return Resultado(nomeBusca,listaResultados, null)
+        return Resultado(nomeBusca, listaResultados, null)
     }
 }
