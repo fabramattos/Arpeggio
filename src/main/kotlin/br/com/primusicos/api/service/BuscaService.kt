@@ -1,5 +1,8 @@
 package br.com.primusicos.api.service
 
+import br.com.primusicos.api.Infra.busca.BuscaRegiao
+import br.com.primusicos.api.Infra.busca.BuscaRequest
+import br.com.primusicos.api.Infra.busca.BuscaTipo
 import br.com.primusicos.api.Infra.exception.BuscaEmBrancoException
 import br.com.primusicos.api.domain.resultado.Resultado
 import br.com.primusicos.api.domain.resultado.ResultadoBusca
@@ -8,16 +11,23 @@ import org.springframework.stereotype.Service
 
 @Service
 class BuscaService(
+    val buscaRequest: BuscaRequest,
     val spotifyService: SpotifyService,
     val deezerService: DeezerService,
     val youtubeMusicService: YoutubeMusicService,
-    val commandStreamingAudio: List<CommandStreamingAudio> = listOf(deezerService, spotifyService, youtubeMusicService)
+    val tidalService: TidalService,
+    val commandStreamingAudio: List<CommandStreamingAudio> = listOf(
+        deezerService,
+        spotifyService,
+        youtubeMusicService,
+        tidalService,
+    )
 ) {
 
-    fun buscaPorArtista(nome: String): Resultado {
+    fun buscaPorArtista(nome: String, regiao: BuscaRegiao, tipo: String): Resultado {
         var nomeBusca = ""
-        var listaResultados = emptyList<ResultadoBusca>()
 
+        var listaResultados = emptyList<ResultadoBusca>()
         val operacao = runCatching {
             if (nome.isBlank())
                 throw BuscaEmBrancoException()
@@ -25,12 +35,24 @@ class BuscaService(
             nomeBusca = nome.tratarBuscaArtista()
             println("Nome Buscado: $nomeBusca")
 
+            val tipos: List<BuscaTipo> = tipo
+                .replace(" ","")
+                .split(",")
+                .filter { it.isNotBlank() }
+                .map { BuscaTipo.valueOf(it.uppercase()) }
+
+            buscaRequest.busca = nomeBusca
+            buscaRequest.regiao = regiao
+            buscaRequest.tipos =  tipos
+
             commandStreamingAudio.forEach { streaming ->
-                val busca = streaming.buscaPorArtista(nomeBusca)
+                val busca = streaming.buscaPorArtista()
                 listaResultados = listaResultados.plus(busca)
             }
         }
 
-        return Resultado(nomeBusca, listaResultados, operacao.exceptionOrNull()?.localizedMessage)
+        operacao.onFailure{ return Resultado(nomeBusca, emptyList(), it.localizedMessage)}
+
+        return Resultado(nomeBusca,listaResultados, null)
     }
 }

@@ -1,9 +1,10 @@
 package br.com.primusicos.api.service
 
+import br.com.primusicos.api.Infra.busca.BuscaRequest
 import br.com.primusicos.api.Infra.exception.*
 import br.com.primusicos.api.domain.resultado.ResultadoBusca
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
-import br.com.primusicos.api.domain.resultado.ResultadoBuscaStreaming
+import br.com.primusicos.api.domain.resultado.ResultadoBuscaConcluida
 import br.com.primusicos.api.domain.spotify.SpotifyArtist
 import br.com.primusicos.api.domain.spotify.SpotifyResponseAlbum
 import br.com.primusicos.api.domain.spotify.SpotifyResponseAuthetication
@@ -17,13 +18,14 @@ import org.springframework.web.util.UriComponentsBuilder
 
 @Service
 class SpotifyService(
+    private val buscaRequest: BuscaRequest,
     private val NOME_STREAMING: String = "Spotify",
     private val webClient: WebClient,
 
-    @Value("\${secrets.spotify_API.id}")
+    @Value("\${secrets.spotify_api.id}")
     private val SPOTIFY_API_ID: String,
 
-    @Value("\${secrets.spotify_API.secret}")
+    @Value("\${secrets.spotify_api.secret}")
     private val SPOTIFY_API_SECRET: String,
 
     private var HEADER_VALUE: String? = null,
@@ -50,7 +52,7 @@ class SpotifyService(
             .fromUriString("https://api.spotify.com/v1/search")
             .queryParam("q", nome)
             .queryParam("type", "artist")
-            .queryParam("market", "BR")
+            .queryParam("market", buscaRequest.regiao.name)
             .queryParam("limit", 3)
             .buildAndExpand()
             .toUri()
@@ -81,7 +83,7 @@ class SpotifyService(
     private fun buscaAlbunsDoArtista(idArtista: String): SpotifyResponseAlbum {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.spotify.com/v1/artists/${idArtista}/albums")
-            .queryParam("include_groups", "album,single")
+            .queryParam("include_groups", retornaTipos())
             .queryParam("limit", 1)
             .buildAndExpand()
             .toUri()
@@ -96,23 +98,23 @@ class SpotifyService(
             ?: throw FalhaAoBuscarAlbunsDoArtista()
     }
 
-    override fun buscaPorArtista(nome: String): ResultadoBusca {
+    override fun buscaPorArtista(): ResultadoBusca {
         println("Consultando Spotify")
         if (TOKEN.isNullOrEmpty())
             TOKEN = autentica().access_token
 
-        return tentaBuscarPorArtista(nome)
+        return tentaBuscarPorArtista()
     }
 
 
-    private fun tentaBuscarPorArtista(nome: String): ResultadoBusca {
+    private fun tentaBuscarPorArtista(): ResultadoBusca {
         repeat(3) {
             try {
-                val artistas: List<SpotifyArtist> = buscaArtistas(nome)
-                val idArtista = encontraIdArtista(nome, artistas)
+                val artistas: List<SpotifyArtist> = buscaArtistas(buscaRequest.busca)
+                val idArtista = encontraIdArtista(buscaRequest.busca, artistas)
                 val totalDeAlbuns = buscaAlbunsDoArtista(idArtista).total
-                return ResultadoBuscaStreaming(NOME_STREAMING, totalDeAlbuns)
-            } catch (e: ArtistaNaoEncontradoException){
+                return ResultadoBuscaConcluida(NOME_STREAMING, totalDeAlbuns)
+            } catch (e: ArtistaNaoEncontradoException) {
                 return ResultadoBuscaErros(NOME_STREAMING, e.localizedMessage)
             } catch (e: Exception) {
                 if (e.localizedMessage.contains("401")) {
@@ -123,8 +125,22 @@ class SpotifyService(
                 Thread.sleep(1000)
             }
         }
-        return ResultadoBuscaErros(NOME_STREAMING, FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).localizedMessage)
+        return ResultadoBuscaErros(
+            NOME_STREAMING,
+            FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).localizedMessage
+        )
     }
+
+
+    private fun retornaTipos(): String {
+        var texto = ""
+        buscaRequest.tipos.forEach {
+            texto = texto.plus(it.name + ",")
+        }
+        texto = texto.removeSuffix(",")
+        return texto
+    }
+
 }
 
 
