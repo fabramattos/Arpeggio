@@ -3,7 +3,6 @@
 server:
   port: ${PORT}
   address: 0.0.0.0
-  forward-headers-strategy: framework
 
 chrome:
   url: ${CHROME_URL}
