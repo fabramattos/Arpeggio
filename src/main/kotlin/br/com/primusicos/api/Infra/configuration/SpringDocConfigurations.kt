@@ -30,22 +30,22 @@ class SpringDocConfigurations {
             }
         })
 
-    @Bean
-    fun corsWebFilter(): CorsWebFilter {
-        val source = UrlBasedCorsConfigurationSource()
-        val config = CorsConfiguration()
-
-        config.allowCredentials = true
-
-        // por  padrão swagger faz requisição sem o "s" do http
+//    @Bean
+//    fun corsWebFilter(): CorsWebFilter {
+//        val source = UrlBasedCorsConfigurationSource()
+//        val config = CorsConfiguration()
+//
+//        config.allowCredentials = true
+//
+//        // por  padrão swagger faz requisição sem o "s" do http
 //        config.addAllowedOrigin("http://arpeggio.up.railway.app/**")
-        config.addAllowedOrigin("*")
-        config.addAllowedHeader("*")
-        config.addAllowedMethod("*")
-        source.registerCorsConfiguration("/**", config)
-//        source.registerCorsConfiguration("/v1/artista/**", config)
-//        source.registerCorsConfiguration("/doc/swagger-ui/**", config)
-        return CorsWebFilter(source)
-    }
+//        config.addAllowedOrigin("*")
+//        config.addAllowedHeader("*")
+//        config.addAllowedMethod("*")
+//        source.registerCorsConfiguration("/**", config)
+////        source.registerCorsConfiguration("/v1/artista/**", config)
+////        source.registerCorsConfiguration("/doc/swagger-ui/**", config)
+//        return CorsWebFilter(source)
+//    }
 
 }
