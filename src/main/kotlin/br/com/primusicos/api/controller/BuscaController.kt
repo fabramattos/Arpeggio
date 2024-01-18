@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("v1")
-@CrossOrigin("https://arpejo.up.railway.app/doc/swagger-ui/*")
+@CrossOrigin("https://arpejo.up.railway.app/doc/swagger-ui/**")
 class BuscaController(val service: BuscaService) {
 
     @GetMapping("/artista")
