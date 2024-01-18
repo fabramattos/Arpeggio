@@ -19,9 +19,23 @@ class SpringDocConfigurations {
             version = "1.0"
             title = "Arpeggio API"
             description = """
-                        API para consulta simultanea em streamings de música.
-                        Dado um artista, banda ou podcast, juntamente com os filtros para a busca (país, tipo de album desejado)
-                        retornamos um comparativo com os dados obtidos.
+                        DESCRIÇÃO:
+                        API para consulta simultanea nos seguintes  streamings de música:
+                            Spotify, Deezer, Tidal, TouTube Music (desativo temporariamente).
+                        
+                        Por enquanto, não busca por Podcasts.
+                        
+                        
+                        COMO USAR:
+                        Pesquise por um artista e retornaremos a quantidade de Albuns, Singles e EPs para cada serviço!
+                        
+                        Por padrão, buscamos apenas ALBUMS. Caso deseje refinar a busca, informe o tipo material buscado
+                        (ALBUM, SINGLE) e o país onde esse material será acessado (BR, US)
+                        
+                        
+                        OBS:
+                        Devido a diferença na forma que cada streaming cataloga seus dados, para uma comparação justa,
+                        esta API agrupa SINGLES e EPs (buscando por SINGLE retornamos SINGLE e EP).
                     """
             contact = Contact().apply {
                 name = "Felipe Mattos"

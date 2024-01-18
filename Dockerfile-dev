@@ -6,4 +6,4 @@ COPY  build/libs/*.jar /app/app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-jar","app.jar"]
 
-# docker build -t arpejo-api -f Dockerfile-dev .
+# docker build -t arpeggio-api -f Dockerfile-dev .
