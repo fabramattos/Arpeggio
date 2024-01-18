@@ -40,7 +40,7 @@ class SpringDocConfigurations {
         config.addAllowedHeader("*")
         config.addAllowedMethod("*")
 
-        source.registerCorsConfiguration("/doc/swagger-ui", config)
+        source.registerCorsConfiguration("/**", config)
         return CorsFilter(source)
     }
 
