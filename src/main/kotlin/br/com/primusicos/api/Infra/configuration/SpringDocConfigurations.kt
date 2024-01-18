@@ -36,11 +36,14 @@ class SpringDocConfigurations {
 
         val config = CorsConfiguration()
         config.allowCredentials = true
-        config.addAllowedOrigin("*")
+        config.addAllowedOrigin("https://arpeggio.up.railway.app/**")
         config.addAllowedHeader("*")
         config.addAllowedMethod("*")
 
-        source.registerCorsConfiguration("/**", config)
+        source.registerCorsConfiguration("/v1/artista/**", config)
+        source.registerCorsConfiguration("/doc/swagger-ui/**", config)
+
+
         return CorsFilter(source)
     }
 
