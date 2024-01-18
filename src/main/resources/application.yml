@@ -13,8 +13,3 @@ secrets:
 chrome:
   url: ${CHROME_URL:http://localhost}
   port: ${CHROME_PORT:4444}
-
-spring:
-  webflux:
-    cors:
-      allowed-origins: https://arpejo.up.railway.app/doc/swagger-ui/**
