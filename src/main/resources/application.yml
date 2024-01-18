@@ -17,4 +17,4 @@ chrome:
 spring:
   webflux:
     cors:
-      allowed-origins: https://arpejo.up.railway.app/doc/swagger-ui/*
+      allowed-origins: https://arpejo.up.railway.app/doc/swagger-ui/**
