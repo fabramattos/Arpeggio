@@ -5,9 +5,6 @@ import io.swagger.v3.oas.models.info.Contact
 import io.swagger.v3.oas.models.info.Info
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.web.cors.CorsConfiguration
-import org.springframework.web.cors.reactive.CorsWebFilter
-import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
 
 
 @Configuration
@@ -21,7 +18,7 @@ class SpringDocConfigurations {
             description = """
                         DESCRIÇÃO:
                         API para consulta simultanea nos seguintes  streamings de música:
-                            Spotify, Deezer, Tidal, TouTube Music (desativo temporariamente).
+                            Spotify, Deezer, Tidal, TouTube Music (desativado temporariamente).
                         
                         Por enquanto, não busca por Podcasts.
                         
@@ -43,6 +40,7 @@ class SpringDocConfigurations {
 //                url = "urlFrontEnd.com.br"
             }
         })
+
 
 //    @Bean
 //    fun corsWebFilter(): CorsWebFilter {

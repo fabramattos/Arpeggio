@@ -1,6 +1,7 @@
 springdoc:
   swagger-ui:
     path: /doc/swagger-ui
+    defaultModelsExpandDepth: -1
 
 secrets:
   spotify_api:
