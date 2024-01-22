@@ -161,8 +161,10 @@ class TidalService(
                 Thread.sleep(800)
 
             }catch (e: Exception){
-                if(e.localizedMessage.contains("Erro: 429"))
+                if(e.localizedMessage.contains("Erro: 429")) {
                     println("$NOME_STREAMING: Erro 429: Muitas request: Aguardando")
+                    Thread.sleep(1000)
+                }
             }
         }
         return totalAlbuns
