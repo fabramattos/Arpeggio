@@ -109,65 +109,54 @@ class TidalService(
         var offset = 0
         val limit = 10
         var totalAlbuns = 0
-        try {
-            while (true) {
-                val uri = UriComponentsBuilder
-                    .fromUriString("https://openapi.tidal.com/artists/${idArtista}/albums")
-                    .queryParam("countryCode", buscaRequest.regiao.name)
-                    .queryParam("offset", offset)
-                    .queryParam("limit", limit)
-                    .buildAndExpand()
-                    .toUri()
+        var maxAlbuns = Int.MAX_VALUE
+        while (offset < maxAlbuns) {
+            val uri = UriComponentsBuilder
+                .fromUriString("https://openapi.tidal.com/artists/${idArtista}/albums")
+                .queryParam("countryCode", buscaRequest.regiao.name)
+                .queryParam("offset", offset)
+                .queryParam("limit", limit)
+                .buildAndExpand()
+                .toUri()
 
-                val response = webClient
+            val response = webClient
+                .get()
+                .uri(uri)
+                .header("accept", "application/vnd.tidal.v1+json")
+                .header("Authorization", HEADER_VALUE)
+                .header("Content-Type", "application/vnd.tidal.v1+json")
+                .retrieve()
+                .bodyToMono<String>()
+                .block()
+                ?: throw FalhaAoBuscarAlbunsDoArtista()
 
-                    .get()
-                    .uri(uri)
-                    .header("accept", "application/vnd.tidal.v1+json")
-                    .header("Authorization", HEADER_VALUE)
-                    .header("Content-Type", "application/vnd.tidal.v1+json")
-                    .retrieve()
-                    .bodyToMono<String>()
-                    .block()
-                    ?: throw FalhaAoBuscarAlbunsDoArtista()
+            val albunsNode = ObjectMapper()
+                .readTree(response)
+                .path("data")
 
-                val albunsNode = ObjectMapper()
-                    .readTree(response)
-                    .path("data")
+            maxAlbuns = ObjectMapper()
+                .readTree(response)
+                .path("metadata")
+                .path("total")
+                .asInt()
 
-                val erroCode = ObjectMapper()
-                    .readTree(response)
-                    .path("errors")
-                    .path("code").asText()
-
-                //terminou de analizar o array inteiro de albuns
-                if (erroCode.equals("NOT_FOUND", true))
-                    break
-
-                for (album in albunsNode) {
-                    if (verificaSePodeIgnorarRestricaoAutoral()) {
-                        totalAlbuns += 1
-                        continue
-                    }
-
-                    val type = album.path("resource").path("type").asText()
-                    val status = album.path("status").asInt()
-
-                    if (status == 451)
-                        throw FalhaInformacoesImprecisasDireitosAutoraisException()
-
-                    if (buscaRequest.tipos.any { tipo -> type.equals(tipo.name, true) })
-                        totalAlbuns += 1
-
+            for (album in albunsNode) {
+                if (verificaSePodeIgnorarRestricaoAutoral()) {
+                    totalAlbuns += 1
+                    continue
                 }
-                offset += limit
-                Thread.sleep(500)
+
+                val type = album.path("resource").path("type").asText()
+                val status = album.path("status").asInt()
+
+                if (status == 451)
+                    throw FalhaInformacoesImprecisasDireitosAutoraisException()
+
+                if (buscaRequest.tipos.any { tipo -> type.equals(tipo.name, true) })
+                    totalAlbuns += 1
             }
-        } catch (e: FalhaInformacoesImprecisasDireitosAutoraisException){
-            throw FalhaInformacoesImprecisasDireitosAutoraisException()
-        } catch (e: Exception) {
-            if (e.localizedMessage.contains("404"))
-                return totalAlbuns
+            offset += limit
+            Thread.sleep(500)
         }
         return totalAlbuns
     }
@@ -195,7 +184,8 @@ class TidalService(
                 Thread.sleep(1000)
             }
         }
-        return ResultadoBuscaErros(NOME_STREAMING, FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).localizedMessage
+        return ResultadoBuscaErros(
+            NOME_STREAMING, FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).localizedMessage
         )
     }
 
