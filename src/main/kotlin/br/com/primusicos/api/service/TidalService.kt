@@ -111,52 +111,59 @@ class TidalService(
         var totalAlbuns = 0
         var maxAlbuns = Int.MAX_VALUE
         while (offset < maxAlbuns) {
-            val uri = UriComponentsBuilder
-                .fromUriString("https://openapi.tidal.com/artists/${idArtista}/albums")
-                .queryParam("countryCode", buscaRequest.regiao.name)
-                .queryParam("offset", offset)
-                .queryParam("limit", limit)
-                .buildAndExpand()
-                .toUri()
+            try {
 
-            val response = webClient
-                .get()
-                .uri(uri)
-                .header("accept", "application/vnd.tidal.v1+json")
-                .header("Authorization", HEADER_VALUE)
-                .header("Content-Type", "application/vnd.tidal.v1+json")
-                .retrieve()
-                .bodyToMono<String>()
-                .block()
-                ?: throw FalhaAoBuscarAlbunsDoArtista()
+                val uri = UriComponentsBuilder
+                    .fromUriString("https://openapi.tidal.com/artists/${idArtista}/albums")
+                    .queryParam("countryCode", buscaRequest.regiao.name)
+                    .queryParam("offset", offset)
+                    .queryParam("limit", limit)
+                    .buildAndExpand()
+                    .toUri()
 
-            val albunsNode = ObjectMapper()
-                .readTree(response)
-                .path("data")
+                val response = webClient
+                    .get()
+                    .uri(uri)
+                    .header("accept", "application/vnd.tidal.v1+json")
+                    .header("Authorization", HEADER_VALUE)
+                    .header("Content-Type", "application/vnd.tidal.v1+json")
+                    .retrieve()
+                    .bodyToMono<String>()
+                    .block()
+                    ?: throw FalhaAoBuscarAlbunsDoArtista()
 
-            maxAlbuns = ObjectMapper()
-                .readTree(response)
-                .path("metadata")
-                .path("total")
-                .asInt()
+                val albunsNode = ObjectMapper()
+                    .readTree(response)
+                    .path("data")
 
-            for (album in albunsNode) {
-                if (verificaSePodeIgnorarRestricaoAutoral()) {
-                    totalAlbuns += 1
-                    continue
+                maxAlbuns = ObjectMapper()
+                    .readTree(response)
+                    .path("metadata")
+                    .path("total")
+                    .asInt()
+
+                for (album in albunsNode) {
+                    if (verificaSePodeIgnorarRestricaoAutoral()) {
+                        totalAlbuns += 1
+                        continue
+                    }
+
+                    val type = album.path("resource").path("type").asText()
+                    val status = album.path("status").asInt()
+
+                    if (status == 451)
+                        throw FalhaInformacoesImprecisasDireitosAutoraisException()
+
+                    if (buscaRequest.tipos.any { tipo -> type.equals(tipo.name, true) })
+                        totalAlbuns += 1
                 }
+                offset += limit
+                Thread.sleep(800)
 
-                val type = album.path("resource").path("type").asText()
-                val status = album.path("status").asInt()
-
-                if (status == 451)
-                    throw FalhaInformacoesImprecisasDireitosAutoraisException()
-
-                if (buscaRequest.tipos.any { tipo -> type.equals(tipo.name, true) })
-                    totalAlbuns += 1
+            }catch (e: Exception){
+                if(e.localizedMessage.contains("Erro: 429"))
+                    println("$NOME_STREAMING: Erro 429: Muitas request: Aguardando")
             }
-            offset += limit
-            Thread.sleep(500)
         }
         return totalAlbuns
     }
@@ -181,7 +188,7 @@ class TidalService(
                     TOKEN = autentica()
                 } else
                     println("Erro no ${NOME_STREAMING} | Tentativa $it | Erro: ${e.localizedMessage}")
-                Thread.sleep(1000)
+                Thread.sleep(500)
             }
         }
         return ResultadoBuscaErros(
