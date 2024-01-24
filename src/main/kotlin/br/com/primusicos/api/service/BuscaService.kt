@@ -1,19 +1,18 @@
 package br.com.primusicos.api.service
 
-import br.com.primusicos.api.Infra.busca.BuscaRegiao
-import br.com.primusicos.api.Infra.busca.BuscaRequest
-import br.com.primusicos.api.Infra.busca.BuscaTipo
+import br.com.primusicos.api.Infra.busca.RequestParams
+import br.com.primusicos.api.Infra.busca.RequestRegiao
+import br.com.primusicos.api.Infra.busca.RequestTipo
 import br.com.primusicos.api.Infra.exception.BuscaEmBrancoException
 import br.com.primusicos.api.domain.resultado.Resultado
 import br.com.primusicos.api.domain.resultado.ResultadoBusca
 import br.com.primusicos.api.utilitario.tratarBuscaArtista
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import org.springframework.stereotype.Service
-import org.springframework.web.context.annotation.RequestScope
 
 @Service
-@RequestScope
 class BuscaService(
-    val buscaRequest: BuscaRequest,
     val spotifyService: SpotifyService,
     val deezerService: DeezerService,
     val youtubeMusicService: YoutubeMusicService,
@@ -26,31 +25,35 @@ class BuscaService(
     )
 ) {
 
-    fun buscaPorArtista(nome: String, regiao: BuscaRegiao, tipo: String): Resultado {
-        var nomeBusca = ""
+     suspend fun buscaPorArtista(nome: String, regiao: RequestRegiao, tipo: String): Resultado {
+         var nomeBusca = ""
 
         var listaResultados = emptyList<ResultadoBusca>()
-        val operacao = runCatching {
+
+         val operacao = runCatching {
             if (nome.isBlank())
                 throw BuscaEmBrancoException()
 
             nomeBusca = nome.tratarBuscaArtista()
             println("Nome Buscado: $nomeBusca")
 
-            val tipos: List<BuscaTipo> = tipo
+            val tipos: List<RequestTipo> = tipo
                 .replace(" ", "")
                 .split(",")
                 .filter {it.equals("album", true) || it.equals("single", true) }
-                .map { BuscaTipo.valueOf(it.uppercase()) }
-                .let { if (BuscaTipo.SINGLE in it ) it + BuscaTipo.EP else it }
+                .map { RequestTipo.valueOf(it.uppercase()) }
+                .let { if (RequestTipo.SINGLE in it ) it + RequestTipo.EP else it }
 
-            buscaRequest.busca = nomeBusca
-            buscaRequest.regiao = regiao
-            buscaRequest.tipos = tipos
+            val requestParams = RequestParams(nomeBusca,regiao,tipos)
 
-            commandStreamingAudio.forEach { streaming ->
-                val busca = streaming.buscaPorArtista()
-                listaResultados = listaResultados.plus(busca)
+            coroutineScope {
+                commandStreamingAudio.forEach { streaming ->
+                    launch {
+                        val busca = streaming.buscaPorArtista(requestParams)
+                        listaResultados = listaResultados.plus(busca)
+                    }
+                }
+
             }
         }
 

@@ -1,43 +1,40 @@
 package br.com.primusicos.api.service
 
-import br.com.primusicos.api.Infra.busca.BuscaRequest
-import br.com.primusicos.api.Infra.busca.BuscaTipo
+import br.com.primusicos.api.Infra.busca.RequestParams
+import br.com.primusicos.api.Infra.busca.RequestTipo
 import br.com.primusicos.api.Infra.exception.*
 import br.com.primusicos.api.domain.resultado.ResultadoBusca
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaConcluida
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.stereotype.Service
-import org.springframework.web.context.annotation.RequestScope
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
 import org.springframework.web.util.UriComponentsBuilder
 import java.net.URI
 
+private const val NOME_STREAMING: String = "Tidal"
 private const val DELAY_REQUEST = 800L
 private const val DELAY_RETRY = 1000L
 private const val LIMIT = 90
 
 
 @Service
-@RequestScope
 class TidalService(
     private val authentication: TidalAuthentication,
-    private val buscaRequest: BuscaRequest,
-    private val NOME_STREAMING: String = "Tidal",
     private val webClient: WebClient,
-    private var erros: Int = 0,
 ) : CommandStreamingAudio {
 
-    override fun buscaPorArtista(): ResultadoBusca {
+    override suspend fun buscaPorArtista(requestParams: RequestParams): ResultadoBusca {
         println("Consultando $NOME_STREAMING")
         authentication.atualizaToken(webClient)
-        return tentaBuscarPorArtista()
+        return tentaBuscarPorArtista(requestParams)
     }
 
-    private fun buscaArtistas(nome: String): JsonNode {
-        val uri = uriBuscaArtistas(nome)
+    private suspend fun buscaArtistas(requestParams:RequestParams): JsonNode {
+        val uri = uriBuscaArtistas(requestParams)
         val response = chamadaApiTidal_BuscaArtistas(uri)
 
         return ObjectMapper()
@@ -45,49 +42,41 @@ class TidalService(
             .path("artists") // array de artistas. Dentro, RESOURCES contem os dados de cada artista retornado
     }
 
-    private fun chamadaApiTidal_BuscaArtistas(uri: URI): String {
-        val response = runCatching {
-            webClient
-                .get()
-                .uri(uri)
-                .header("accept", "application/vnd.tidal.v1+json")
-                .header("Authorization", authentication.HEADER_VALUE)
-                .header("Content-Type", "application/vnd.tidal.v1+json")
-                .retrieve()
-                .bodyToMono<String>()
-                .block()
-        }
+    private suspend fun chamadaApiTidal_BuscaArtistas(uri: URI): String =
+        webClient
+            .get()
+            .uri(uri)
+            .header("accept", "application/vnd.tidal.v1+json")
+            .header("Authorization", authentication.headerValue)
+            .header("Content-Type", "application/vnd.tidal.v1+json")
+            .retrieve()
+            .bodyToMono<String>()
+            .awaitSingleOrNull()
+            ?: throw FalhaAoBuscarArtistasException()
 
-        response.onFailure {
-            if (it.localizedMessage.contains("401"))
-                throw FalhaNaoAuthorizadoException()
-        }
 
-        return response.getOrNull().toString()
-    }
-
-    private fun uriBuscaArtistas(nome: String) = UriComponentsBuilder
+    private fun uriBuscaArtistas(requestParams:RequestParams) = UriComponentsBuilder
         .fromUriString("https://openapi.tidal.com/search")
-        .queryParam("query", nome)
+        .queryParam("query", requestParams.busca)
         .queryParam("type", "ARTISTS")
         .queryParam("offset", 0)
         .queryParam("limit", 3)
-        .queryParam("countryCode", buscaRequest.regiao.name)
+        .queryParam("countryCode", requestParams.regiao.name)
         .buildAndExpand()
         .toUri()
 
-    private fun encontraIdArtista(nome: String, artistasNode: JsonNode): String {
+    private fun encontraIdArtista(requestParams: RequestParams, artistasNode: JsonNode): String {
         for (artistaNode in artistasNode) {
             val nomeArtista = artistaNode
                 .path("resource")
                 .path("name").asText()
-            if (nomeArtista.equals(nome, true))
+            if (nomeArtista.equals(requestParams.busca, true))
                 return artistaNode.path("resource").path("id").asText()
         }
         throw ArtistaNaoEncontradoException()
     }
 
-    private fun buscaAlbunsDoArtista(idArtista: String): Int {
+    private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: String): Int {
         var errosReq = 0
         var offset = 0
         var totalAlbuns = 0
@@ -95,7 +84,7 @@ class TidalService(
         while (offset < maxAlbuns && errosReq <= 3) {
             val resultado = runCatching {
 
-                val uri = uriAlbunsDoArtista(idArtista, offset)
+                val uri = uriAlbunsDoArtista(requestParams, idArtista, offset)
                 val response = chamadaApiTidal_AlbunsDoArtista(uri)
 
                 val albunsNode = ObjectMapper()
@@ -108,7 +97,7 @@ class TidalService(
                     .path("total")
                     .asInt()
 
-                totalAlbuns += contarAlbunsValidos(albunsNode)
+                totalAlbuns += contarAlbunsValidos(requestParams, albunsNode)
             }
 
             resultado.onSuccess {
@@ -120,36 +109,36 @@ class TidalService(
                 if (it.localizedMessage.contains("Erro: 429")) { // erro de muitas requisições ao Tidal
                     errosReq++
                     Thread.sleep(DELAY_RETRY)
-                }else
+                } else
                     throw it
             }
         }
         return totalAlbuns
     }
 
-    private fun chamadaApiTidal_AlbunsDoArtista(uri: URI) = webClient
+    private suspend fun chamadaApiTidal_AlbunsDoArtista(uri: URI) = webClient
         .get()
         .uri(uri)
         .header("accept", "application/vnd.tidal.v1+json")
-        .header("Authorization", authentication.HEADER_VALUE)
+        .header("Authorization", authentication.headerValue)
         .header("Content-Type", "application/vnd.tidal.v1+json")
         .retrieve()
         .bodyToMono<String>()
-        .block()
+        .awaitSingleOrNull()
         ?: throw FalhaAoBuscarAlbunsDoArtista()
 
-    private fun uriAlbunsDoArtista(idArtista: String, offset: Int) = UriComponentsBuilder
+    private fun uriAlbunsDoArtista(requestParams: RequestParams, idArtista: String, offset: Int) = UriComponentsBuilder
         .fromUriString("https://openapi.tidal.com/artists/${idArtista}/albums")
-        .queryParam("countryCode", buscaRequest.regiao.name)
+        .queryParam("countryCode", requestParams.regiao.name)
         .queryParam("offset", offset)
         .queryParam("limit", LIMIT)
         .buildAndExpand()
         .toUri()
 
 
-    private fun contarAlbunsValidos(albunsNode: JsonNode): Int {
+    private fun contarAlbunsValidos(requestParams: RequestParams, albunsNode: JsonNode): Int {
         return albunsNode.count { album ->
-            if (verificaSePodeIgnorarRestricaoAutoral()) {
+            if (verificaSePodeIgnorarRestricaoAutoral(requestParams)) {
                 true
             } else {
                 val type = album.path("resource").path("type").asText()
@@ -157,23 +146,22 @@ class TidalService(
 
                 if (status == 451) throw FalhaInformacoesImprecisasDireitosAutoraisException()
 
-                buscaRequest.tipos.any { tipo -> type.equals(tipo.name, true) }
+                requestParams.tipos.any { tipo -> type.equals(tipo.name, true) }
             }
         }
     }
 
 
-    private fun tentaBuscarPorArtista(): ResultadoBusca {
-        var totalDeAlbuns = 0
+    private suspend fun tentaBuscarPorArtista(requestParams: RequestParams): ResultadoBusca {
+        var erros = 0
         while (erros < 3) {
             val resultadoBusca = runCatching {
-                val artistas = buscaArtistas(buscaRequest.busca)
-                val idArtista = encontraIdArtista(buscaRequest.busca, artistas)
-                totalDeAlbuns = buscaAlbunsDoArtista(idArtista)
+                val artistas = buscaArtistas(requestParams)
+                val idArtista = encontraIdArtista(requestParams, artistas)
+                val totalDeAlbuns = buscaAlbunsDoArtista(requestParams, idArtista)
                 println("Consulta $NOME_STREAMING concluída")
+                return ResultadoBuscaConcluida(NOME_STREAMING, totalDeAlbuns)
             }
-
-            resultadoBusca.onSuccess { return ResultadoBuscaConcluida(NOME_STREAMING, totalDeAlbuns) }
 
             resultadoBusca.onFailure {
                 erros++
@@ -184,20 +172,20 @@ class TidalService(
                     ->
                         return ResultadoBuscaErros(NOME_STREAMING, it.localizedMessage)
 
-                    is FalhaNaoAuthorizadoException -> {
-                        Thread.sleep(500)
-                        authentication.atualizaToken(webClient)
-                        tentaBuscarPorArtista()
+                    else -> {
+                        if(it.localizedMessage.contains("401")) {
+                            Thread.sleep(500)
+                            authentication.atualizaToken(webClient)
+                        }
                     }
                 }
             }
         }
         return ResultadoBuscaErros(
-            NOME_STREAMING, FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).localizedMessage
-        )
+            NOME_STREAMING, FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).localizedMessage)
     }
 
-    private fun verificaSePodeIgnorarRestricaoAutoral(): Boolean {
-        return buscaRequest.tipos.containsAll(listOf(BuscaTipo.ALBUM, BuscaTipo.SINGLE))
+    private fun verificaSePodeIgnorarRestricaoAutoral(requestParams: RequestParams): Boolean {
+        return requestParams.tipos.containsAll(listOf(RequestTipo.ALBUM, RequestTipo.SINGLE))
     }
 }

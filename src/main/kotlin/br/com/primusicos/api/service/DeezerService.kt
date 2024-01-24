@@ -1,6 +1,6 @@
 package br.com.primusicos.api.service
 
-import br.com.primusicos.api.Infra.busca.BuscaRequest
+import br.com.primusicos.api.Infra.busca.RequestParams
 import br.com.primusicos.api.Infra.exception.ArtistaNaoEncontradoException
 import br.com.primusicos.api.Infra.exception.FalhaAoBuscarAlbunsDoArtista
 import br.com.primusicos.api.Infra.exception.FalhaAoBuscarArtistasException
@@ -12,19 +12,19 @@ import br.com.primusicos.api.domain.streamings.deezer.DeezerAlbum
 import br.com.primusicos.api.domain.streamings.deezer.DeezerArtist
 import br.com.primusicos.api.domain.streamings.deezer.DeezerResponseAlbum
 import br.com.primusicos.api.domain.streamings.deezer.DeezerResponseArtists
+import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
 import org.springframework.web.util.UriComponentsBuilder
 
-@Service
-class DeezerService(
-    private val buscaRequest: BuscaRequest,
-    private val webClient: WebClient,
-    private val NOME_STREAMING: String = "Deezer",
-) : CommandStreamingAudio {
+private const val NOME_STREAMING: String = "Deezer"
 
-    private fun buscaArtistas(nome: String): List<DeezerArtist> {
+@Service
+class DeezerService(private val webClient: WebClient) : CommandStreamingAudio {
+
+
+    private suspend fun buscaArtistas(nome: String): List<DeezerArtist> {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.deezer.com/search/artist")
             .queryParam("q", nome)
@@ -37,9 +37,10 @@ class DeezerService(
             .retrieve()
             .bodyToMono<DeezerResponseArtists>()
             .map { it.data }
-            .block()
+            .awaitSingleOrNull()
             ?: throw FalhaAoBuscarArtistasException()
     }
+
 
     private fun encontraIdArtista(nome: String, artistas: List<DeezerArtist>) =
         artistas
@@ -47,7 +48,8 @@ class DeezerService(
             ?.id
             ?: throw ArtistaNaoEncontradoException()
 
-    private fun buscaAlbunsDoArtista(idArtista: Int): List<DeezerAlbum> {
+
+    private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: Int): List<DeezerAlbum> {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.deezer.com/artist/$idArtista/albums")
             .queryParam("limit", 999)
@@ -60,28 +62,38 @@ class DeezerService(
             .retrieve()
             .bodyToMono<DeezerResponseAlbum>()
             .map { it.data }
-            .block()
+            .awaitSingleOrNull()
             ?.filter {album ->
-                buscaRequest.tipos.any { tipo ->
+                requestParams.tipos.any { tipo ->
                     album.record_type.equals(tipo.name, true) }
             }
             ?: throw FalhaAoBuscarAlbunsDoArtista()
     }
 
-    override fun buscaPorArtista(): ResultadoBusca = tentaBuscarPorArtista()
 
-    private fun tentaBuscarPorArtista(): ResultadoBusca {
-        repeat(3){
-            try {
-                val artistas: List<DeezerArtist> = buscaArtistas(buscaRequest.busca)
+    override suspend fun buscaPorArtista(requestParams: RequestParams): ResultadoBusca {
+        println("Consultando $NOME_STREAMING")
+        return tentaBuscarPorArtista(requestParams)
+    }
 
-                val idArtista = encontraIdArtista(buscaRequest.busca, artistas)
-                val totalDeAlbuns = buscaAlbunsDoArtista(idArtista).size
+
+    private suspend fun tentaBuscarPorArtista(requestParams: RequestParams): ResultadoBusca {
+        var erros = 0
+        while(erros < 3){
+            val response = runCatching {
+                val artistas: List<DeezerArtist> = buscaArtistas(requestParams.busca)
+                val idArtista = encontraIdArtista(requestParams.busca, artistas)
+                val totalDeAlbuns = buscaAlbunsDoArtista(requestParams, idArtista).size
+                println("Consulta $NOME_STREAMING concluída")
                 return ResultadoBuscaConcluida(NOME_STREAMING, totalDeAlbuns)
-            }catch (e: ArtistaNaoEncontradoException) {
-                return ResultadoBuscaErros(NOME_STREAMING, e.localizedMessage)
-            }catch (e: Exception){
-                println("Erro no ${NOME_STREAMING} | Tentativa $it | Erro: $e.localizedMessage")
+            }
+
+            response.onFailure {
+                erros++
+                println("${NOME_STREAMING}: Erro: ${it.localizedMessage} | Tentativa $erros")
+                if(it is ArtistaNaoEncontradoException)
+                    return ResultadoBuscaErros(NOME_STREAMING, it.localizedMessage)
+
                 Thread.sleep(1000)
             }
         }

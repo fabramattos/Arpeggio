@@ -1,6 +1,6 @@
 package br.com.primusicos.api.controller
 
-import br.com.primusicos.api.Infra.busca.BuscaRegiao
+import br.com.primusicos.api.Infra.busca.RequestRegiao
 import br.com.primusicos.api.domain.resultado.Resultado
 import br.com.primusicos.api.service.BuscaService
 import io.swagger.v3.oas.annotations.Parameter
@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.*
 class BuscaController(val service: BuscaService) {
 
     @GetMapping("/artista")
-    fun buscaArtista(@RequestParam nome: String,
-                     @RequestParam(required = false, defaultValue = "BR") regiao: BuscaRegiao,
-                     @Parameter(
+    suspend fun buscaArtista(@RequestParam nome: String,
+                             @RequestParam(required = false, defaultValue = "BR") regiao: RequestRegiao,
+                             @Parameter(
                          name = "tipo",
                          description = "Conteúdo desejado de busca, separado por virgulas.\n\nValores aceitos: \"ALBUM\", \"SINGLE\"",
                          schema = Schema(

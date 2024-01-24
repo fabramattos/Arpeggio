@@ -1,59 +1,37 @@
 package br.com.primusicos.api.service
 
-import br.com.primusicos.api.Infra.busca.BuscaRequest
-import br.com.primusicos.api.Infra.busca.BuscaTipo
-import br.com.primusicos.api.Infra.exception.*
+import br.com.primusicos.api.Infra.busca.RequestParams
+import br.com.primusicos.api.Infra.busca.RequestTipo
+import br.com.primusicos.api.Infra.exception.ArtistaNaoEncontradoException
+import br.com.primusicos.api.Infra.exception.FalhaAoBuscarAlbunsDoArtista
+import br.com.primusicos.api.Infra.exception.FalhaAoBuscarArtistasException
+import br.com.primusicos.api.Infra.exception.FalhaNaRequisicaoAoStreamingException
 import br.com.primusicos.api.domain.resultado.ResultadoBusca
-import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaConcluida
+import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
 import br.com.primusicos.api.domain.spotify.SpotifyArtist
 import br.com.primusicos.api.domain.spotify.SpotifyResponseAlbum
-import br.com.primusicos.api.domain.spotify.SpotifyResponseAuthetication
 import br.com.primusicos.api.domain.spotify.SpotifyResponseBusca
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.http.MediaType
+import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
 import org.springframework.web.util.UriComponentsBuilder
 
+private const val NOME_STREAMING: String = "Spotify"
+
 @Service
 class SpotifyService(
-    private val buscaRequest: BuscaRequest,
-    private val NOME_STREAMING: String = "Spotify",
+    private val authentication: SpotifyAuthentication,
     private val webClient: WebClient,
-
-    @Value("\${secrets.spotify_api.id}")
-    private val SPOTIFY_API_ID: String,
-
-    @Value("\${secrets.spotify_api.secret}")
-    private val SPOTIFY_API_SECRET: String,
-
-    private var HEADER_VALUE: String? = null,
 ) : CommandStreamingAudio {
-    private var TOKEN: String? = null
-        private set(value) {
-            field = value
-            HEADER_VALUE = "Bearer $TOKEN"
-        }
 
-
-    private fun autentica(): SpotifyResponseAuthetication =
-        webClient.post()
-            .uri("https://accounts.spotify.com/api/token")
-            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-            .bodyValue("grant_type=client_credentials&client_id=${SPOTIFY_API_ID}&client_secret=${SPOTIFY_API_SECRET}")
-            .retrieve()
-            .bodyToMono<SpotifyResponseAuthetication>()
-            .block()
-            ?: throw FalhaAoRecuperarTokenException()
-
-    private fun buscaArtistas(nome: String): List<SpotifyArtist> {
+    private suspend fun buscaArtistas(requestParams:RequestParams): List<SpotifyArtist> {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.spotify.com/v1/search")
-            .queryParam("q", nome)
+            .queryParam("q", requestParams.busca)
             .queryParam("type", "artist")
-            .queryParam("market", buscaRequest.regiao.name)
+            .queryParam("market", requestParams.regiao.name)
             .queryParam("limit", 3)
             .buildAndExpand()
             .toUri()
@@ -61,17 +39,18 @@ class SpotifyService(
         return webClient
             .get()
             .uri(uri)
-            .header("Authorization", HEADER_VALUE)
+            .header("Authorization", authentication.headerValue)
             .retrieve()
             .bodyToMono<SpotifyResponseBusca>()
             .map { it.artists.items }
-            .block()
+            .awaitSingleOrNull()
             ?: throw FalhaAoBuscarArtistasException()
     }
 
-    private fun encontraIdArtista(nome: String, artistas: List<SpotifyArtist>): String {
+
+    private fun encontraIdArtista(requestParams:RequestParams, artistas: List<SpotifyArtist>): String {
         val id = artistas
-            .find { it.name.equals(nome, true) }
+            .find { it.name.equals(requestParams.busca, true) }
             ?.id
 
         if (id.isNullOrEmpty())
@@ -81,10 +60,10 @@ class SpotifyService(
     }
 
 
-    private fun buscaAlbunsDoArtista(idArtista: String): SpotifyResponseAlbum {
+    private suspend fun buscaAlbunsDoArtista(requestParams:RequestParams, idArtista: String): SpotifyResponseAlbum {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.spotify.com/v1/artists/${idArtista}/albums")
-            .queryParam("include_groups", retornaTipos())
+            .queryParam("include_groups", retornaTipos(requestParams))
             .queryParam("limit", 1)
             .buildAndExpand()
             .toUri()
@@ -92,38 +71,41 @@ class SpotifyService(
         return webClient
             .get()
             .uri(uri)
-            .header("Authorization", HEADER_VALUE)
+            .header("Authorization", authentication.headerValue)
             .retrieve()
             .bodyToMono<SpotifyResponseAlbum>()
-            .block()
+            .awaitSingleOrNull()
             ?: throw FalhaAoBuscarAlbunsDoArtista()
     }
 
-    override fun buscaPorArtista(): ResultadoBusca {
+    override suspend fun buscaPorArtista(requestParams: RequestParams): ResultadoBusca {
         println("Consultando Spotify")
-        if (TOKEN.isNullOrEmpty())
-            TOKEN = autentica().access_token
-
-        return tentaBuscarPorArtista()
+        authentication.atualizaToken(webClient)
+        return tentaBuscarPorArtista(requestParams)
     }
 
 
-    private fun tentaBuscarPorArtista(): ResultadoBusca {
-        repeat(3) {
-            try {
-                val artistas: List<SpotifyArtist> = buscaArtistas(buscaRequest.busca)
-                val idArtista = encontraIdArtista(buscaRequest.busca, artistas)
-                val totalDeAlbuns = buscaAlbunsDoArtista(idArtista).total
+    private suspend fun tentaBuscarPorArtista(requestParams:RequestParams): ResultadoBusca {
+        var erros = 0
+        while (erros < 3) {
+            val resultado = runCatching {
+                val artistas: List<SpotifyArtist> = buscaArtistas(requestParams)
+                val idArtista = encontraIdArtista(requestParams, artistas)
+                val totalDeAlbuns = buscaAlbunsDoArtista(requestParams, idArtista).total
+                println("Consulta $NOME_STREAMING concluída")
                 return ResultadoBuscaConcluida(NOME_STREAMING, totalDeAlbuns)
-            } catch (e: ArtistaNaoEncontradoException) {
-                return ResultadoBuscaErros(NOME_STREAMING, e.localizedMessage)
-            } catch (e: Exception) {
-                if (e.localizedMessage.contains("401")) {
-                    println("Erro no ${NOME_STREAMING} | Tentativa $it | Erro: 401 Unauthorized")
-                    TOKEN = autentica().access_token
-                } else
-                    println("Erro no ${NOME_STREAMING} | Tentativa $it | Erro: ${e.localizedMessage}")
-                Thread.sleep(1000)
+            }
+
+            resultado.onFailure {
+                erros++
+                println("${NOME_STREAMING}: Erro: ${it.localizedMessage} | Tentativa $erros")
+                if (it is ArtistaNaoEncontradoException)
+                    return ResultadoBuscaErros(NOME_STREAMING, it.localizedMessage)
+
+                if (it.localizedMessage.contains("401")) {
+                    Thread.sleep(500)
+                    authentication.atualizaToken(webClient)
+                }
             }
         }
         return ResultadoBuscaErros(
@@ -133,10 +115,10 @@ class SpotifyService(
     }
 
 
-    private fun retornaTipos(): String {
+    private fun retornaTipos(requestParams:RequestParams): String {
         var texto = ""
-        buscaRequest.tipos
-            .filterNot { it == BuscaTipo.EP } // -> Spotify não filtra EP! Single = Single + EP
+        requestParams.tipos
+            .filterNot { it == RequestTipo.EP } // -> Spotify não filtra EP! Single = Single + EP
             .forEach { texto = texto.plus(it.name + ",") }
         texto = texto.removeSuffix(",")
         return texto
