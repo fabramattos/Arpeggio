@@ -8,8 +8,10 @@ import br.com.primusicos.api.domain.resultado.Resultado
 import br.com.primusicos.api.domain.resultado.ResultadoBusca
 import br.com.primusicos.api.utilitario.tratarBuscaArtista
 import org.springframework.stereotype.Service
+import org.springframework.web.context.annotation.RequestScope
 
 @Service
+@RequestScope
 class BuscaService(
     val buscaRequest: BuscaRequest,
     val spotifyService: SpotifyService,

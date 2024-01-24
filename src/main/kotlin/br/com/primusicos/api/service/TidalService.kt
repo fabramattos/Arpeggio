@@ -3,16 +3,13 @@ package br.com.primusicos.api.service
 import br.com.primusicos.api.Infra.busca.BuscaRequest
 import br.com.primusicos.api.Infra.busca.BuscaTipo
 import br.com.primusicos.api.Infra.exception.*
-import br.com.primusicos.api.Infra.security.AuthEncoders
 import br.com.primusicos.api.domain.resultado.ResultadoBusca
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaConcluida
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
-import org.springframework.web.reactive.function.BodyInserters
+import org.springframework.web.context.annotation.RequestScope
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
 import org.springframework.web.util.UriComponentsBuilder
@@ -24,53 +21,19 @@ private const val LIMIT = 90
 
 
 @Service
+@RequestScope
 class TidalService(
+    private val authentication: TidalAuthentication,
     private val buscaRequest: BuscaRequest,
     private val NOME_STREAMING: String = "Tidal",
     private val webClient: WebClient,
-
-    @Value("\${secrets.tidal_api.id}")
-    private val TIDAL_API_ID: String,
-
-    @Value("\${secrets.tidal_api.secret}")
-    private val TIDAL_API_SECRET: String,
-
-    private val B64CREDENTIALS: String = AuthEncoders().encodeToBase64(TIDAL_API_ID, TIDAL_API_SECRET),
-
-    private var HEADER_VALUE: String? = null,
+    private var erros: Int = 0,
 ) : CommandStreamingAudio {
-
-    private var TOKEN: String? = null
-        private set(value) {
-            field = value
-            HEADER_VALUE = "Bearer $TOKEN"
-        }
-
 
     override fun buscaPorArtista(): ResultadoBusca {
         println("Consultando $NOME_STREAMING")
-        if (TOKEN.isNullOrEmpty())
-            TOKEN = autentica()
-
+        authentication.atualizaToken(webClient)
         return tentaBuscarPorArtista()
-    }
-
-
-    private fun autentica(): String {
-        val json = webClient.post()
-            .uri("https://auth.tidal.com/v1/oauth2/token")
-            .header("Authorization", B64CREDENTIALS)
-            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-            .body(BodyInserters.fromFormData("grant_type", "client_credentials"))
-            .retrieve()
-            .bodyToMono<String>()
-            .block()
-            ?: throw FalhaAoRecuperarTokenException()
-
-        return ObjectMapper()
-            .readTree(json)
-            .path("access_token")
-            .asText()
     }
 
     private fun buscaArtistas(nome: String): JsonNode {
@@ -82,16 +45,26 @@ class TidalService(
             .path("artists") // array de artistas. Dentro, RESOURCES contem os dados de cada artista retornado
     }
 
-    private fun chamadaApiTidal_BuscaArtistas(uri: URI) = (webClient
-        .get()
-        .uri(uri)
-        .header("accept", "application/vnd.tidal.v1+json")
-        .header("Authorization", HEADER_VALUE)
-        .header("Content-Type", "application/vnd.tidal.v1+json")
-        .retrieve()
-        .bodyToMono<String>()
-        .block()
-        ?: throw FalhaAoBuscarArtistasException())
+    private fun chamadaApiTidal_BuscaArtistas(uri: URI): String {
+        val response = runCatching {
+            webClient
+                .get()
+                .uri(uri)
+                .header("accept", "application/vnd.tidal.v1+json")
+                .header("Authorization", authentication.HEADER_VALUE)
+                .header("Content-Type", "application/vnd.tidal.v1+json")
+                .retrieve()
+                .bodyToMono<String>()
+                .block()
+        }
+
+        response.onFailure {
+            if (it.localizedMessage.contains("401"))
+                throw FalhaNaoAuthorizadoException()
+        }
+
+        return response.getOrNull().toString()
+    }
 
     private fun uriBuscaArtistas(nome: String) = UriComponentsBuilder
         .fromUriString("https://openapi.tidal.com/search")
@@ -115,11 +88,11 @@ class TidalService(
     }
 
     private fun buscaAlbunsDoArtista(idArtista: String): Int {
-        var erros = 0
+        var errosReq = 0
         var offset = 0
         var totalAlbuns = 0
         var maxAlbuns = Int.MAX_VALUE
-        while (offset < maxAlbuns && erros <= 3) {
+        while (offset < maxAlbuns && errosReq <= 3) {
             val resultado = runCatching {
 
                 val uri = uriAlbunsDoArtista(idArtista, offset)
@@ -144,35 +117,26 @@ class TidalService(
             }
 
             resultado.onFailure {
-                when (it) {
-                    is FalhaAoBuscarAlbunsDoArtista,
-                    is FalhaInformacoesImprecisasDireitosAutoraisException,
-                    -> throw it
-
-                    else -> {
-                        val msg = it.localizedMessage
-                        println("$NOME_STREAMING: $msg")
-                        if (msg.contains("Erro: 429"))
-                            Thread.sleep(DELAY_RETRY)
-                        else
-                            erros++
-                    }
-                }
+                if (it.localizedMessage.contains("Erro: 429")) { // erro de muitas requisições ao Tidal
+                    errosReq++
+                    Thread.sleep(DELAY_RETRY)
+                }else
+                    throw it
             }
         }
         return totalAlbuns
     }
 
-    private fun chamadaApiTidal_AlbunsDoArtista(uri: URI) = (webClient
+    private fun chamadaApiTidal_AlbunsDoArtista(uri: URI) = webClient
         .get()
         .uri(uri)
         .header("accept", "application/vnd.tidal.v1+json")
-        .header("Authorization", HEADER_VALUE)
+        .header("Authorization", authentication.HEADER_VALUE)
         .header("Content-Type", "application/vnd.tidal.v1+json")
         .retrieve()
         .bodyToMono<String>()
         .block()
-        ?: throw FalhaAoBuscarAlbunsDoArtista())
+        ?: throw FalhaAoBuscarAlbunsDoArtista()
 
     private fun uriAlbunsDoArtista(idArtista: String, offset: Int) = UriComponentsBuilder
         .fromUriString("https://openapi.tidal.com/artists/${idArtista}/albums")
@@ -201,7 +165,6 @@ class TidalService(
 
     private fun tentaBuscarPorArtista(): ResultadoBusca {
         var totalDeAlbuns = 0
-        var erros = 0
         while (erros < 3) {
             val resultadoBusca = runCatching {
                 val artistas = buscaArtistas(buscaRequest.busca)
@@ -214,18 +177,17 @@ class TidalService(
 
             resultadoBusca.onFailure {
                 erros++
+                println("${NOME_STREAMING}: Erro: ${it.localizedMessage} | Tentativa $erros")
                 when (it) {
                     is ArtistaNaoEncontradoException,
                     is FalhaInformacoesImprecisasDireitosAutoraisException,
                     ->
                         return ResultadoBuscaErros(NOME_STREAMING, it.localizedMessage)
 
-                    else -> {
-                        if (it.localizedMessage.contains("401")) {
-                            println("${NOME_STREAMING}: Erro: ${it.localizedMessage} | Tentativa $erros")
-                            TOKEN = autentica()
-                        }
+                    is FalhaNaoAuthorizadoException -> {
                         Thread.sleep(500)
+                        authentication.atualizaToken(webClient)
+                        tentaBuscarPorArtista()
                     }
                 }
             }
