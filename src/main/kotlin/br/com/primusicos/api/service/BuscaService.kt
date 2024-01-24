@@ -22,35 +22,37 @@ class BuscaService(
         spotifyService,
         youtubeMusicService,
         tidalService,
-    )
+    ),
 ) {
 
-     suspend fun buscaPorArtista(nome: String, regiao: RequestRegiao, tipo: String): Resultado {
-         var nomeBusca = ""
+    suspend fun buscaPorArtista(nome: String, regiao: RequestRegiao, tipo: String): Resultado {
+        var nomeBusca = ""
 
-        var listaResultados = emptyList<ResultadoBusca>()
+        val listaResultados = mutableListOf<ResultadoBusca>()
 
-         val operacao = runCatching {
+        val operacao = runCatching {
             if (nome.isBlank())
                 throw BuscaEmBrancoException()
 
             nomeBusca = nome.tratarBuscaArtista()
             println("Nome Buscado: $nomeBusca")
 
-            val tipos: List<RequestTipo> = tipo
+            val tipos: MutableList<RequestTipo> = tipo
                 .replace(" ", "")
                 .split(",")
-                .filter {it.equals("album", true) || it.equals("single", true) }
+                .filter { it.equals("album", true) || it.equals("single", true) }
                 .map { RequestTipo.valueOf(it.uppercase()) }
-                .let { if (RequestTipo.SINGLE in it ) it + RequestTipo.EP else it }
+                .toMutableList()
+                .also { if (RequestTipo.SINGLE in it) it + RequestTipo.EP }
+                .also { if (it.isEmpty()) it.add(RequestTipo.ALBUM) }
 
-            val requestParams = RequestParams(nomeBusca,regiao,tipos)
+            val requestParams = RequestParams(nomeBusca, regiao, tipos)
 
             coroutineScope {
                 commandStreamingAudio.forEach { streaming ->
                     launch {
-                        val busca = streaming.buscaPorArtista(requestParams)
-                        listaResultados = listaResultados.plus(busca)
+                        val resultado = streaming.buscaPorArtista(requestParams)
+                        listaResultados.add(resultado)
                     }
                 }
 
