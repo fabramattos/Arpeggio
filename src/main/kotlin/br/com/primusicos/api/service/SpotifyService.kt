@@ -14,12 +14,14 @@ import br.com.primusicos.api.domain.spotify.SpotifyResponseAlbum
 import br.com.primusicos.api.domain.spotify.SpotifyResponseBusca
 import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.reactor.awaitSingleOrNull
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
 import org.springframework.web.util.UriComponentsBuilder
 
-private const val NOME_STREAMING: String = "Spotify"
+private const val NOME_STREAMING = "Spotify"
+private const val VALIDADE_TOKEN = 3600L
 
 @Service
 class SpotifyService(
@@ -28,7 +30,8 @@ class SpotifyService(
 ) : CommandStreamingAudio {
 
     @PostConstruct
-    fun init() {
+    @Scheduled(fixedRate = VALIDADE_TOKEN)
+    fun atualizaToken() {
         authentication.atualizaToken(webClient)
     }
 

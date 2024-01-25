@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.reactor.awaitSingleOrNull
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
@@ -20,6 +21,7 @@ private const val NOME_STREAMING: String = "Tidal"
 private const val DELAY_REQUEST = 800L
 private const val DELAY_RETRY = 1000L
 private const val LIMIT = 90
+private const val VALIDADE_TOKEN = 86400L
 
 
 @Service
@@ -29,7 +31,8 @@ class TidalService(
 ) : CommandStreamingAudio {
 
     @PostConstruct
-    fun init(){
+    @Scheduled(fixedRate = VALIDADE_TOKEN)
+    fun atualizaToken(){
         authentication.atualizaToken(webClient)
     }
 
