@@ -19,15 +19,13 @@ class TidalAuthentication(
     private val TIDAL_API_SECRET: String,
     private val B64CREDENTIALS: String = AuthEncoders().encodeToBase64(TIDAL_API_ID, TIDAL_API_SECRET),
     private var token: String? = null,
-    private var header: String? = null
+    private var header: String? = null,
 ) {
     val headerValue get() = header
 
     fun atualizaToken(webClient: WebClient) {
-        if (token.isNullOrEmpty()) {
-            token = autentica(webClient)
-            header = "Bearer $token"
-        }
+        token = autentica(webClient)
+        header = "Bearer $token"
     }
 
     private fun autentica(webClient: WebClient): String {

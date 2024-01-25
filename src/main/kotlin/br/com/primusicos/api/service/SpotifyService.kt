@@ -12,6 +12,7 @@ import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
 import br.com.primusicos.api.domain.spotify.SpotifyArtist
 import br.com.primusicos.api.domain.spotify.SpotifyResponseAlbum
 import br.com.primusicos.api.domain.spotify.SpotifyResponseBusca
+import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
@@ -26,7 +27,12 @@ class SpotifyService(
     private val webClient: WebClient,
 ) : CommandStreamingAudio {
 
-    private suspend fun buscaArtistas(requestParams:RequestParams): List<SpotifyArtist> {
+    @PostConstruct
+    fun init() {
+        authentication.atualizaToken(webClient)
+    }
+
+    private suspend fun buscaArtistas(requestParams: RequestParams): List<SpotifyArtist> {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.spotify.com/v1/search")
             .queryParam("q", requestParams.busca)
@@ -48,7 +54,7 @@ class SpotifyService(
     }
 
 
-    private fun encontraIdArtista(requestParams:RequestParams, artistas: List<SpotifyArtist>): String {
+    private fun encontraIdArtista(requestParams: RequestParams, artistas: List<SpotifyArtist>): String {
         val id = artistas
             .find { it.name.equals(requestParams.busca, true) }
             ?.id
@@ -60,7 +66,7 @@ class SpotifyService(
     }
 
 
-    private suspend fun buscaAlbunsDoArtista(requestParams:RequestParams, idArtista: String): SpotifyResponseAlbum {
+    private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: String): SpotifyResponseAlbum {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.spotify.com/v1/artists/${idArtista}/albums")
             .queryParam("include_groups", retornaTipos(requestParams))
@@ -80,12 +86,11 @@ class SpotifyService(
 
     override suspend fun buscaPorArtista(requestParams: RequestParams): ResultadoBusca {
         println("Consultando Spotify")
-        authentication.atualizaToken(webClient)
         return tentaBuscarPorArtista(requestParams)
     }
 
 
-    private suspend fun tentaBuscarPorArtista(requestParams:RequestParams): ResultadoBusca {
+    private suspend fun tentaBuscarPorArtista(requestParams: RequestParams): ResultadoBusca {
         var erros = 0
         while (erros < 3) {
             val resultado = runCatching {
@@ -115,7 +120,7 @@ class SpotifyService(
     }
 
 
-    private fun retornaTipos(requestParams:RequestParams): String {
+    private fun retornaTipos(requestParams: RequestParams): String {
         var texto = ""
         requestParams.tipos
             .filterNot { it == RequestTipo.EP } // -> Spotify não filtra EP! Single = Single + EP

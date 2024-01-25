@@ -8,6 +8,7 @@ import br.com.primusicos.api.domain.resultado.ResultadoBuscaConcluida
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
@@ -27,9 +28,13 @@ class TidalService(
     private val webClient: WebClient,
 ) : CommandStreamingAudio {
 
+    @PostConstruct
+    fun init(){
+        authentication.atualizaToken(webClient)
+    }
+
     override suspend fun buscaPorArtista(requestParams: RequestParams): ResultadoBusca {
         println("Consultando $NOME_STREAMING")
-        authentication.atualizaToken(webClient)
         return tentaBuscarPorArtista(requestParams)
     }
 

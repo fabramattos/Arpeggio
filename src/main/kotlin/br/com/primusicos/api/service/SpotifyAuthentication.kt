@@ -17,16 +17,16 @@ class SpotifyAuthentication(
     private val SPOTIFY_API_SECRET: String,
 
     private var header: String? = null,
-    private var token: String? = null
+    private var token: String? = null,
 ) {
 
     val headerValue get() = header
 
-    fun atualizaToken(webClient: WebClient){
-        if(token.isNullOrEmpty())
-            token = autentica(webClient).access_token
-            header = "Bearer $token"
+    fun atualizaToken(webClient: WebClient) {
+        token = autentica(webClient).access_token
+        header = "Bearer $token"
     }
+
     private fun autentica(webClient: WebClient): SpotifyResponseAuthetication =
         webClient.post()
             .uri("https://accounts.spotify.com/api/token")
