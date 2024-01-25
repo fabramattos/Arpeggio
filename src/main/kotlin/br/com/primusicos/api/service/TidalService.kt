@@ -3,12 +3,16 @@ package br.com.primusicos.api.service
 import br.com.primusicos.api.Infra.busca.RequestParams
 import br.com.primusicos.api.Infra.busca.RequestTipo
 import br.com.primusicos.api.Infra.exception.*
+import br.com.primusicos.api.Infra.log.Logs
 import br.com.primusicos.api.domain.resultado.ResultadoBusca
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaConcluida
 import br.com.primusicos.api.domain.resultado.ResultadoBuscaErros
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.annotation.PostConstruct
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
@@ -17,7 +21,6 @@ import org.springframework.web.reactive.function.client.bodyToMono
 import org.springframework.web.util.UriComponentsBuilder
 import java.net.URI
 
-private const val NOME_STREAMING: String = "Tidal"
 private const val DELAY_REQUEST = 800L
 private const val DELAY_RETRY = 1000L
 private const val LIMIT = 90
@@ -26,22 +29,53 @@ private const val VALIDADE_TOKEN = 86400L
 
 @Service
 class TidalService(
+    override val NOME_STREAMING: String = "Tidal",
     private val authentication: TidalAuthentication,
     private val webClient: WebClient,
 ) : CommandStreamingAudio {
 
     @PostConstruct
     @Scheduled(fixedRate = VALIDADE_TOKEN)
-    fun atualizaToken(){
-        authentication.atualizaToken(webClient)
+    fun atualizaToken() {
+        CoroutineScope(Dispatchers.Default)
+            .launch {
+                authentication.atualizaToken(webClient)
+            }
     }
+
 
     override suspend fun buscaPorArtista(requestParams: RequestParams): ResultadoBusca {
-        println("Consultando $NOME_STREAMING")
-        return tentaBuscarPorArtista(requestParams)
+        var erros = 0
+        while (erros < 3) {
+            val resultadoBusca = runCatching {
+                val artistas = buscaArtistas(requestParams)
+                val idArtista = encontraIdArtista(requestParams, artistas)
+                val totalDeAlbuns = buscaAlbunsDoArtista(requestParams, idArtista)
+                return ResultadoBuscaConcluida(NOME_STREAMING, totalDeAlbuns)
+            }
+
+            resultadoBusca.onFailure {
+                erros++
+                Logs.exception(NOME_STREAMING, requestParams.id.toString(), it.localizedMessage, erros)
+                when (it) {
+                    is ArtistaNaoEncontradoException,
+                    is FalhaInformacoesImprecisasDireitosAutoraisException,
+                    ->
+                        return ResultadoBuscaErros(NOME_STREAMING, it.localizedMessage)
+
+                    else -> {
+                        if (it.localizedMessage.contains("401"))
+                            authentication.atualizaToken(webClient)
+                    }
+                }
+            }
+        }
+        return ResultadoBuscaErros(
+            NOME_STREAMING, FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).localizedMessage
+        )
     }
 
-    private suspend fun buscaArtistas(requestParams:RequestParams): JsonNode {
+    private suspend fun buscaArtistas(requestParams: RequestParams): JsonNode {
         val uri = uriBuscaArtistas(requestParams)
         val response = chamadaApiTidal_BuscaArtistas(uri)
 
@@ -63,7 +97,7 @@ class TidalService(
             ?: throw FalhaAoBuscarArtistasException()
 
 
-    private fun uriBuscaArtistas(requestParams:RequestParams) = UriComponentsBuilder
+    private fun uriBuscaArtistas(requestParams: RequestParams) = UriComponentsBuilder
         .fromUriString("https://openapi.tidal.com/search")
         .queryParam("query", requestParams.busca)
         .queryParam("type", "ARTISTS")
@@ -157,40 +191,6 @@ class TidalService(
                 requestParams.tipos.any { tipo -> type.equals(tipo.name, true) }
             }
         }
-    }
-
-
-    private suspend fun tentaBuscarPorArtista(requestParams: RequestParams): ResultadoBusca {
-        var erros = 0
-        while (erros < 3) {
-            val resultadoBusca = runCatching {
-                val artistas = buscaArtistas(requestParams)
-                val idArtista = encontraIdArtista(requestParams, artistas)
-                val totalDeAlbuns = buscaAlbunsDoArtista(requestParams, idArtista)
-                println("Consulta $NOME_STREAMING concluída")
-                return ResultadoBuscaConcluida(NOME_STREAMING, totalDeAlbuns)
-            }
-
-            resultadoBusca.onFailure {
-                erros++
-                println("${NOME_STREAMING}: Erro: ${it.localizedMessage} | Tentativa $erros")
-                when (it) {
-                    is ArtistaNaoEncontradoException,
-                    is FalhaInformacoesImprecisasDireitosAutoraisException,
-                    ->
-                        return ResultadoBuscaErros(NOME_STREAMING, it.localizedMessage)
-
-                    else -> {
-                        if(it.localizedMessage.contains("401")) {
-                            Thread.sleep(500)
-                            authentication.atualizaToken(webClient)
-                        }
-                    }
-                }
-            }
-        }
-        return ResultadoBuscaErros(
-            NOME_STREAMING, FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).localizedMessage)
     }
 
     private fun verificaSePodeIgnorarRestricaoAutoral(requestParams: RequestParams): Boolean {

@@ -4,6 +4,7 @@ import br.com.primusicos.api.Infra.busca.RequestParams
 import br.com.primusicos.api.Infra.busca.RequestRegiao
 import br.com.primusicos.api.Infra.busca.RequestTipo
 import br.com.primusicos.api.Infra.exception.BuscaEmBrancoException
+import br.com.primusicos.api.Infra.log.Logs
 import br.com.primusicos.api.domain.resultado.Resultado
 import br.com.primusicos.api.domain.resultado.ResultadoBusca
 import br.com.primusicos.api.utilitario.tratarBuscaArtista
@@ -18,14 +19,14 @@ class BuscaService(
     val youtubeMusicService: YoutubeMusicService,
     val tidalService: TidalService,
     val commandStreamingAudio: List<CommandStreamingAudio> = listOf(
-        deezerService,
         spotifyService,
+        deezerService,
         youtubeMusicService,
         tidalService,
     ),
 ) {
 
-    suspend fun buscaPorArtista(nome: String, regiao: RequestRegiao, tipo: String): Resultado {
+     suspend fun buscaPorArtista(nome: String, regiao: RequestRegiao, tipo: String): Resultado {
         var nomeBusca = ""
 
         val listaResultados = mutableListOf<ResultadoBusca>()
@@ -51,8 +52,10 @@ class BuscaService(
             coroutineScope {
                 commandStreamingAudio.forEach { streaming ->
                     launch {
+                        Logs.consultaIniciada(streaming.NOME_STREAMING, requestParams.id.toString())
                         val resultado = streaming.buscaPorArtista(requestParams)
                         listaResultados.add(resultado)
+                        Logs.consultaFinalizada(streaming.NOME_STREAMING, requestParams.id.toString())
                     }
                 }
 

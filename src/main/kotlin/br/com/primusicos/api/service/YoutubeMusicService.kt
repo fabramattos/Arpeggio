@@ -12,17 +12,16 @@ import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.Wait
 import org.openqa.selenium.support.ui.WebDriverWait
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import java.net.URL
 
-private const val NOME_STREAMING: String = "YouTube Music"
 private const val SELETOR_XPATH_BOTAO_ARTISTA: String = "//yt-formatted-string[text()='Artistas']"
 private const val SELETOR_CSS_ALBUNS_DO_ARTISTA: String = "#details > yt-formatted-string"
 private const val SELETOR_CSS_LISTA_ARTISTAS: String = "#contents > ytmusic-grid-renderer"
 
 @Service
 class YoutubeMusicService(
+    override val NOME_STREAMING: String = "Youtube Music",
     private var nomeArtista: String?,
 
     @Value("\${chrome.url}")
@@ -35,9 +34,7 @@ class YoutubeMusicService(
     private var driver: RemoteWebDriver?,
 ) : CommandStreamingAudio {
 
-    @Async
     override suspend fun buscaPorArtista(requestParams: RequestParams): ResultadoBusca {
-        println("Consultando YouTube")
         return ResultadoBuscaErros(NOME_STREAMING, "Desativado na API temporariamente")
 //        nomeArtista = nome
 //        var totalDeAlbuns = 0

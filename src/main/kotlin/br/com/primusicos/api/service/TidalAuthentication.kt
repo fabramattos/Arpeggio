@@ -1,8 +1,10 @@
 package br.com.primusicos.api.service
 
 import br.com.primusicos.api.Infra.exception.FalhaAoRecuperarTokenException
+import br.com.primusicos.api.Infra.log.Logs
 import br.com.primusicos.api.Infra.security.AuthEncoders
 import com.fasterxml.jackson.databind.ObjectMapper
+import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
@@ -23,12 +25,28 @@ class TidalAuthentication(
 ) {
     val headerValue get() = header
 
-    fun atualizaToken(webClient: WebClient) {
-        token = autentica(webClient)
-        header = "Bearer $token"
+    suspend fun atualizaToken(webClient: WebClient) {
+        var erros = 0
+        while(erros < 3) {
+            val chamadaApi = runCatching {
+                token = autentica(webClient)
+                header = "Bearer $token"
+            }
+
+            chamadaApi.onSuccess {
+                Logs.autenticacaoConcluida("Tidal")
+                return
+            }
+
+            chamadaApi.onFailure {
+                erros++
+                Logs.autenticacaoErro("Tidal", it.localizedMessage, erros)
+                Thread.sleep(500)
+            }
+        }
     }
 
-    private fun autentica(webClient: WebClient): String {
+    private suspend fun autentica(webClient: WebClient): String {
         val json = webClient.post()
             .uri("https://auth.tidal.com/v1/oauth2/token")
             .header("Authorization", B64CREDENTIALS)
@@ -36,7 +54,7 @@ class TidalAuthentication(
             .body(BodyInserters.fromFormData("grant_type", "client_credentials"))
             .retrieve()
             .bodyToMono<String>()
-            .block()
+            .awaitSingleOrNull()
             ?: throw FalhaAoRecuperarTokenException()
 
         return ObjectMapper()
