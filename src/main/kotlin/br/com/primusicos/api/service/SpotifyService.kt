@@ -64,7 +64,7 @@ class SpotifyService(
     }
 
 
-    private suspend fun encontraIdArtista(requestParams: RequestParams, artistas: List<SpotifyArtist>): String {
+    private fun encontraIdArtista(requestParams: RequestParams, artistas: List<SpotifyArtist>): String {
         val id = artistas
             .find { it.name.equals(requestParams.busca, true) }
             ?.id
@@ -121,7 +121,7 @@ class SpotifyService(
     }
 
 
-    private suspend fun retornaTipos(requestParams: RequestParams): String {
+    private fun retornaTipos(requestParams: RequestParams): String {
         var texto = ""
         requestParams.tipos
             .filterNot { it == RequestTipo.EP } // -> Spotify não filtra EP! Single = Single + EP

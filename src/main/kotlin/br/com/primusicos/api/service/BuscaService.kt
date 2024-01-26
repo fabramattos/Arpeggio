@@ -8,8 +8,8 @@ import br.com.primusicos.api.Infra.log.Logs
 import br.com.primusicos.api.domain.resultado.Resultado
 import br.com.primusicos.api.domain.resultado.ResultadoBusca
 import br.com.primusicos.api.utilitario.tratarBuscaArtista
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Service
 
 @Service
@@ -26,7 +26,7 @@ class BuscaService(
     ),
 ) {
 
-     suspend fun buscaPorArtista(nome: String, regiao: RequestRegiao, tipo: String): Resultado {
+    fun buscaPorArtista(nome: String, regiao: RequestRegiao, tipo: String): Resultado {
         var nomeBusca = ""
 
         val listaResultados = mutableListOf<ResultadoBusca>()
@@ -49,7 +49,7 @@ class BuscaService(
 
             val requestParams = RequestParams(nomeBusca, regiao, tipos)
 
-            coroutineScope {
+            runBlocking {
                 commandStreamingAudio.forEach { streaming ->
                     launch {
                         Logs.consultaIniciada(streaming.NOME_STREAMING, requestParams.id.toString())

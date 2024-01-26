@@ -45,7 +45,7 @@ class DeezerService(
     }
 
 
-    private suspend fun encontraIdArtista(nome: String, artistas: List<DeezerArtist>) =
+    private fun encontraIdArtista(nome: String, artistas: List<DeezerArtist>) =
         artistas
             .find { it.name.equals(nome, true) }
             ?.id
