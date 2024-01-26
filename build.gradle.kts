@@ -7,7 +7,7 @@ plugins {
     id("io.spring.dependency-management") version "1.1.4"
 }
 
-group = "br.com.primusicos"
+group = "br.com.arpeggio"
 version = "1.1"
 
 java {
