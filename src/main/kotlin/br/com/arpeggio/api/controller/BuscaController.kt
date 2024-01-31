@@ -1,6 +1,6 @@
 package br.com.arpeggio.api.controller
 
-import br.com.arpeggio.api.domain.resultado.Resultado
+import br.com.arpeggio.api.domain.resultado.ResultadoView
 import br.com.arpeggio.api.service.BuscaService
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Schema
@@ -28,7 +28,7 @@ class BuscaController(val service: BuscaService) {
             )
         )
         @RequestParam(required = false, defaultValue = "ALBUM") tipo: String,
-    ): ResponseEntity<Resultado> =
+    ): ResponseEntity<ResultadoView> =
 
         ResponseEntity.ok(service.buscaPorArtista(nome, regiao, tipo))
 
