@@ -12,6 +12,7 @@ import br.com.arpeggio.api.domain.streamings.deezer.DeezerAlbum
 import br.com.arpeggio.api.domain.streamings.deezer.DeezerArtist
 import br.com.arpeggio.api.domain.streamings.deezer.DeezerResponseAlbum
 import br.com.arpeggio.api.domain.streamings.deezer.DeezerResponseArtists
+import br.com.arpeggio.api.infra.busca.RequestParams
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
@@ -51,7 +52,7 @@ class DeezerService(
             ?: throw ArtistaNaoEncontradoException()
 
 
-    private suspend fun buscaAlbunsDoArtista(requestParams: br.com.arpeggio.api.infra.busca.RequestParams, idArtista: Int): List<DeezerAlbum> {
+    private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: Int): List<DeezerAlbum> {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.deezer.com/artist/$idArtista/albums")
             .queryParam("limit", 999)
@@ -73,7 +74,7 @@ class DeezerService(
     }
 
 
-    override suspend fun buscaPorArtista(requestParams: br.com.arpeggio.api.infra.busca.RequestParams): ResultadoBusca {
+    override suspend fun buscaPorArtista(requestParams: RequestParams): ResultadoBusca {
         var erros = 0
         while(erros < 3){
             val response = runCatching {

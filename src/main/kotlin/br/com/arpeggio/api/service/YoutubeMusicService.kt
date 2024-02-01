@@ -2,6 +2,7 @@ package br.com.arpeggio.api.service
 
 import br.com.arpeggio.api.domain.resultado.ResultadoBusca
 import br.com.arpeggio.api.domain.resultado.ResultadoBuscaErros
+import br.com.arpeggio.api.infra.busca.RequestParams
 import org.openqa.selenium.By
 import org.openqa.selenium.JavascriptExecutor
 import org.openqa.selenium.WebDriver
@@ -33,7 +34,7 @@ class YoutubeMusicService(
     private var driver: RemoteWebDriver?,
 ) : CommandStreamingAudio {
 
-    override suspend fun buscaPorArtista(requestParams: br.com.arpeggio.api.infra.busca.RequestParams): ResultadoBusca {
+    override suspend fun buscaPorArtista(requestParams: RequestParams): ResultadoBusca {
         return ResultadoBuscaErros(NOME_STREAMING, "Desativado na API temporariamente")
 //        nomeArtista = nome
 //        var totalDeAlbuns = 0

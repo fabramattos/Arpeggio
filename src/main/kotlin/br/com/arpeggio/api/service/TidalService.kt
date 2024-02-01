@@ -3,6 +3,8 @@ package br.com.arpeggio.api.service
 import br.com.arpeggio.api.domain.resultado.ResultadoBusca
 import br.com.arpeggio.api.domain.resultado.ResultadoBuscaConcluida
 import br.com.arpeggio.api.domain.resultado.ResultadoBuscaErros
+import br.com.arpeggio.api.infra.busca.RequestParams
+import br.com.arpeggio.api.infra.busca.RequestTipo
 import br.com.arpeggio.api.infra.exception.*
 import br.com.arpeggio.api.infra.log.Logs
 import com.fasterxml.jackson.databind.JsonNode
@@ -21,7 +23,7 @@ import java.net.URI
 private const val DELAY_REQUEST = 800L
 private const val DELAY_RETRY = 1000L
 private const val LIMIT = 90
-private const val VALIDADE_TOKEN = 86400*1000L
+private const val VALIDADE_TOKEN = 86400 * 1000L
 
 
 @Service
@@ -40,7 +42,7 @@ class TidalService(
     }
 
 
-    override suspend fun buscaPorArtista(requestParams: br.com.arpeggio.api.infra.busca.RequestParams): ResultadoBusca {
+    override suspend fun buscaPorArtista(requestParams: RequestParams): ResultadoBusca {
         var erros = 0
         while (erros < 3) {
             val resultadoBusca = runCatching {
@@ -71,7 +73,7 @@ class TidalService(
         )
     }
 
-    private suspend fun buscaArtistas(requestParams: br.com.arpeggio.api.infra.busca.RequestParams): JsonNode {
+    private suspend fun buscaArtistas(requestParams: RequestParams): JsonNode {
         val uri = uriBuscaArtistas(requestParams)
         val response = chamadaApiTidal_BuscaArtistas(uri)
 
@@ -93,7 +95,7 @@ class TidalService(
             ?: throw FalhaAoBuscarArtistasException()
 
 
-    private fun uriBuscaArtistas(requestParams: br.com.arpeggio.api.infra.busca.RequestParams) = UriComponentsBuilder
+    private fun uriBuscaArtistas(requestParams: RequestParams) = UriComponentsBuilder
         .fromUriString("https://openapi.tidal.com/search")
         .queryParam("query", requestParams.busca)
         .queryParam("type", "ARTISTS")
@@ -103,7 +105,7 @@ class TidalService(
         .buildAndExpand()
         .toUri()
 
-    private fun encontraIdArtista(requestParams: br.com.arpeggio.api.infra.busca.RequestParams, artistasNode: JsonNode): String {
+    private fun encontraIdArtista(requestParams: RequestParams, artistasNode: JsonNode): String {
         for (artistaNode in artistasNode) {
             val nomeArtista = artistaNode
                 .path("resource")
@@ -114,7 +116,7 @@ class TidalService(
         throw ArtistaNaoEncontradoException()
     }
 
-    private suspend fun buscaAlbunsDoArtista(requestParams: br.com.arpeggio.api.infra.busca.RequestParams, idArtista: String): Int {
+    private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: String): Int {
         var errosReq = 0
         var offset = 0
         var totalAlbuns = 0
@@ -165,7 +167,7 @@ class TidalService(
         .awaitSingleOrNull()
         ?: throw FalhaAoBuscarAlbunsDoArtista()
 
-    private fun uriAlbunsDoArtista(requestParams: br.com.arpeggio.api.infra.busca.RequestParams, idArtista: String, offset: Int) = UriComponentsBuilder
+    private fun uriAlbunsDoArtista(requestParams: RequestParams, idArtista: String, offset: Int) = UriComponentsBuilder
         .fromUriString("https://openapi.tidal.com/artists/${idArtista}/albums")
         .queryParam("countryCode", requestParams.regiao.name)
         .queryParam("offset", offset)
@@ -174,7 +176,7 @@ class TidalService(
         .toUri()
 
 
-    private fun contarAlbunsValidos(requestParams: br.com.arpeggio.api.infra.busca.RequestParams, albunsNode: JsonNode): Int {
+    private fun contarAlbunsValidos(requestParams: RequestParams, albunsNode: JsonNode): Int {
         return albunsNode.count { album ->
             if (verificaSePodeIgnorarRestricaoAutoral(requestParams)) {
                 true
@@ -189,7 +191,7 @@ class TidalService(
         }
     }
 
-    private fun verificaSePodeIgnorarRestricaoAutoral(requestParams: br.com.arpeggio.api.infra.busca.RequestParams): Boolean {
-        return requestParams.tipos.containsAll(listOf(br.com.arpeggio.api.infra.busca.RequestTipo.ALBUM, br.com.arpeggio.api.infra.busca.RequestTipo.SINGLE))
+    private fun verificaSePodeIgnorarRestricaoAutoral(requestParams: RequestParams): Boolean {
+        return requestParams.tipos.containsAll(listOf(RequestTipo.ALBUM, RequestTipo.SINGLE))
     }
 }

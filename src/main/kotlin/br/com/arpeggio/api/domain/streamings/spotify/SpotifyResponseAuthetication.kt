@@ -1,4 +1,4 @@
-package br.com.arpeggio.api.domain.spotify
+package br.com.arpeggio.api.domain.streamings.spotify
 
 data class SpotifyResponseAuthetication(
     val access_token: String,

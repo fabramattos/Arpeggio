@@ -2,7 +2,7 @@ package br.com.arpeggio.api.service
 
 import br.com.arpeggio.api.infra.exception.FalhaAoRecuperarTokenException
 import br.com.arpeggio.api.infra.log.Logs
-import br.com.arpeggio.api.domain.spotify.SpotifyResponseAuthetication
+import br.com.arpeggio.api.domain.streamings.spotify.SpotifyResponseAuthetication
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType

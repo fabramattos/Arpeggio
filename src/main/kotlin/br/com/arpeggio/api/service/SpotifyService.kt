@@ -3,9 +3,10 @@ package br.com.arpeggio.api.service
 import br.com.arpeggio.api.domain.resultado.ResultadoBusca
 import br.com.arpeggio.api.domain.resultado.ResultadoBuscaConcluida
 import br.com.arpeggio.api.domain.resultado.ResultadoBuscaErros
-import br.com.arpeggio.api.domain.spotify.SpotifyArtist
-import br.com.arpeggio.api.domain.spotify.SpotifyResponseAlbum
-import br.com.arpeggio.api.domain.spotify.SpotifyResponseBusca
+import br.com.arpeggio.api.domain.streamings.spotify.SpotifyArtist
+import br.com.arpeggio.api.domain.streamings.spotify.SpotifyResponseAlbum
+import br.com.arpeggio.api.domain.streamings.spotify.SpotifyResponseBusca
+import br.com.arpeggio.api.infra.busca.RequestParams
 import br.com.arpeggio.api.infra.exception.ArtistaNaoEncontradoException
 import br.com.arpeggio.api.infra.exception.FalhaAoBuscarAlbunsDoArtista
 import br.com.arpeggio.api.infra.exception.FalhaAoBuscarArtistasException
@@ -39,7 +40,7 @@ class SpotifyService(
     }
 
 
-    private suspend fun buscaArtistas(requestParams: br.com.arpeggio.api.infra.busca.RequestParams): List<SpotifyArtist> {
+    private suspend fun buscaArtistas(requestParams: RequestParams): List<SpotifyArtist> {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.spotify.com/v1/search")
             .queryParam("q", requestParams.busca)
@@ -61,7 +62,7 @@ class SpotifyService(
     }
 
 
-    private fun encontraIdArtista(requestParams: br.com.arpeggio.api.infra.busca.RequestParams, artistas: List<SpotifyArtist>): String {
+    private fun encontraIdArtista(requestParams: RequestParams, artistas: List<SpotifyArtist>): String {
         val id = artistas
             .find { it.name.equals(requestParams.busca, true) }
             ?.id
@@ -73,7 +74,7 @@ class SpotifyService(
     }
 
 
-    private suspend fun buscaAlbunsDoArtista(requestParams: br.com.arpeggio.api.infra.busca.RequestParams, idArtista: String): SpotifyResponseAlbum {
+    private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: String): SpotifyResponseAlbum {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.spotify.com/v1/artists/${idArtista}/albums")
             .queryParam("include_groups", retornaTipos(requestParams))
@@ -91,7 +92,7 @@ class SpotifyService(
             ?: throw FalhaAoBuscarAlbunsDoArtista()
     }
 
-    override suspend fun buscaPorArtista(requestParams: br.com.arpeggio.api.infra.busca.RequestParams): ResultadoBusca {
+    override suspend fun buscaPorArtista(requestParams: RequestParams): ResultadoBusca {
         var erros = 0
         while (erros < 3) {
             val resultado = runCatching {
@@ -118,7 +119,7 @@ class SpotifyService(
     }
 
 
-    private fun retornaTipos(requestParams: br.com.arpeggio.api.infra.busca.RequestParams): String {
+    private fun retornaTipos(requestParams: RequestParams): String {
         var texto = ""
         requestParams.tipos
             .filterNot { it == br.com.arpeggio.api.infra.busca.RequestTipo.EP } // -> Spotify não filtra EP! Single = Single + EP

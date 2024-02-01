@@ -13,7 +13,7 @@ class TratadorDeErros {
         .body(ErroNaApiView("Erro na api"))
 
     @ExceptionHandler(BuscaEmBrancoException::class)
-    fun tratarBuscaEmBranco(e: Exception) =  ResponseEntity
+    fun tratarBuscaEmBranco(e: BuscaEmBrancoException) =  ResponseEntity
         .badRequest()
         .body(ErroNaApiView(BuscaEmBrancoException().localizedMessage))
 
