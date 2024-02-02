@@ -1,6 +1,7 @@
 package br.com.arpeggio.api.controller
 
 import br.com.arpeggio.api.domain.resultado.ResultadoView
+import br.com.arpeggio.api.infra.busca.RequestRegiao
 import br.com.arpeggio.api.service.BuscaService
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Schema
@@ -17,7 +18,7 @@ class BuscaController(val service: BuscaService) {
     @GetMapping("/artista")
     fun buscaArtista(
         @RequestParam nome: String,
-        @RequestParam(required = false, defaultValue = "BR") regiao: br.com.arpeggio.api.infra.busca.RequestRegiao,
+        @RequestParam(required = false, defaultValue = "BR") regiao: RequestRegiao,
         @Parameter(
             name = "tipo",
             description = "Conteúdo desejado de busca, separado por virgulas.\n\nValores aceitos: \"ALBUM\", \"SINGLE\"",

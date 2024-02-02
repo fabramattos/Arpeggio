@@ -33,6 +33,7 @@ dependencies {
     //developmentOnly("org.springframework.boot:spring-boot-docker-compose")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.10.0")
+    testImplementation("io.mockk:mockk:1.13.9")
 }
 
 tasks.withType<KotlinCompile> {
