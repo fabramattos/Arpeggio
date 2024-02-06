@@ -17,13 +17,23 @@ class BuscaController(val service: BuscaService) {
     @GetMapping("/artista")
     fun buscaArtista(
         @RequestParam (required = true) nome: String,
+        @Parameter(
+            name = "regiao",
+            description = "País para realizar a consulta.\n\nValores aceitos: \"BR\", \"US\"",
+            schema = Schema(
+                type = "String",
+                example = "BR",
+                defaultValue = "BR"
+            )
+        )
         @RequestParam(required = true) regiao: String,
         @Parameter(
             name = "tipo",
             description = "Conteúdo desejado de busca, separado por virgulas.\n\nValores aceitos: \"ALBUM\", \"SINGLE\"",
             schema = Schema(
                 type = "String",
-                example = "ALBUM,SINGLE"
+                example = "ALBUM,SINGLE",
+                defaultValue = "ALBUM"
             )
         )
         @RequestParam(required = true) tipo: String,
