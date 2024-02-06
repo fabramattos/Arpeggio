@@ -21,7 +21,7 @@ class BuscaController(val service: BuscaService) {
             name = "regiao",
             description = "País para realizar a consulta.\n\nValores aceitos: \"BR\", \"US\"",
             schema = Schema(
-                type = "String",
+                type = "string",
                 example = "BR",
                 defaultValue = "BR"
             )
@@ -31,7 +31,7 @@ class BuscaController(val service: BuscaService) {
             name = "tipo",
             description = "Conteúdo desejado de busca, separado por virgulas.\n\nValores aceitos: \"ALBUM\", \"SINGLE\"",
             schema = Schema(
-                type = "String",
+                type = "string",
                 example = "ALBUM,SINGLE",
                 defaultValue = "ALBUM"
             )
