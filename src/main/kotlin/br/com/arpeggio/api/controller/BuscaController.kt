@@ -1,7 +1,6 @@
 package br.com.arpeggio.api.controller
 
 import br.com.arpeggio.api.domain.resultado.ResultadoView
-import br.com.arpeggio.api.infra.busca.RequestRegiao
 import br.com.arpeggio.api.service.BuscaService
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Schema
@@ -17,18 +16,17 @@ class BuscaController(val service: BuscaService) {
 
     @GetMapping("/artista")
     fun buscaArtista(
-        @RequestParam nome: String,
-        @RequestParam(required = false, defaultValue = "BR") regiao: RequestRegiao,
+        @RequestParam (required = true) nome: String,
+        @RequestParam(required = true) regiao: String,
         @Parameter(
             name = "tipo",
             description = "Conteúdo desejado de busca, separado por virgulas.\n\nValores aceitos: \"ALBUM\", \"SINGLE\"",
             schema = Schema(
                 type = "String",
-                defaultValue = "ALBUM",
                 example = "ALBUM,SINGLE"
             )
         )
-        @RequestParam(required = false, defaultValue = "ALBUM") tipo: String,
+        @RequestParam(required = true) tipo: String,
     ): ResponseEntity<ResultadoView> =
 
         ResponseEntity.ok(service.buscaPorArtista(nome, regiao, tipo))
