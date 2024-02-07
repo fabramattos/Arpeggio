@@ -6,5 +6,5 @@ server:
   forward-headers-strategy: framework
 
 chrome:
-  url: ${CHROME_URL}
+  url: ${CHROME_HOST}
   port: ${CHROME_PORT}

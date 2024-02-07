@@ -3,17 +3,17 @@
 version: '3'
 
 services:
-  chrome-alone:
-    container_name: chrome
+  selenium:
+    container_name: chrome-alone
     image: selenium/standalone-chrome:latest
-    shm_size: 2g
+    shm_size: 400m
+    networks:
+      - selenium-network
     ports:
       - "4444:4444"
       - "7900:7900"
-#    environment:
-#      - START_XVFB=false
-    networks:
-      - selenium-network
+    env_file:
+      - .env
 
 #  selenium-hub:
 #    container_name: selenium-hub
@@ -39,16 +39,25 @@ services:
 #    networks:
 #      - selenium-network
 
-  arpejo-API:
+  arpeggio:
     container_name: API
-    image: arpejo-api
-    ports:
-      - "8080"
+    image: arpeggio-api
     networks:
       - selenium-network
+    ports:
+      - "8080:8080"
+      - "5005:5005" #depuração remota no container
     depends_on:
-      - chrome-alone
+      - selenium
     env_file:
       - .env
+    environment:
+      CHROME_HOST: selenium
+      CHROME_PORT: 4444
+      JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,address=*:5005,server=y,suspend=n
+
+    command: ["java", "-XX:+UseContainerSupport", "-jar", "app.jar"]
+
 networks:
   selenium-network:
+    driver: bridge

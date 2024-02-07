@@ -12,5 +12,5 @@ secrets:
     secret: ${TIDAL_API_CLIENT_SECRET}
 
 chrome:
-  url: ${CHROME_URL:http://localhost}
-  port: ${CHROME_PORT:4444}
+  url: ${CHROME_HOST}
+  port: ${CHROME_PORT}
