@@ -6,7 +6,7 @@ services:
   selenium:
     container_name: chrome-alone
     image: selenium/standalone-chrome:latest
-    shm_size: 400m
+    shm_size: 100m
     networks:
       - selenium-network
     ports:

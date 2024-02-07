@@ -12,5 +12,5 @@ secrets:
     secret: ${TIDAL_API_CLIENT_SECRET}
 
 chrome:
-  url: ${CHROME_HOST}
+  host: ${CHROME_HOST}
   port: ${CHROME_PORT}

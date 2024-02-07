@@ -26,10 +26,10 @@ private const val SELETOR_CSS_LISTA_ARTISTAS: String = "#contents > ytmusic-grid
 class YoutubeMusicService(
     override val NOME_STREAMING: String = "Youtube Music",
 
-    @Value("\${CHROME_HOST}")
+    @Value("\${chrome.host}")
     private val CHROME_HOST: String,
 
-    @Value("\${CHROME_PORT}")
+    @Value("\${chrome.port}")
     private val CHROME_PORT: String,
 
     private var driver: RemoteWebDriver?,
