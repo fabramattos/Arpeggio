@@ -3,19 +3,19 @@ package br.com.arpeggio.api.infra.log
 class Logs {
     companion object {
         fun exception(nomeStreaming: String, idRequest: String, msg: String, erros: Int) {
-            println("ERRO: requestId = $idRequest |  Serviço = $nomeStreaming | Tentativa = $erros | $msg")
+            println("ERRO EXTERNO: $nomeStreaming | Tentativa: $erros | msg: $msg | requestId: $idRequest")
         }
 
-        fun consultaIniciada(nomeStreaming: String, idRequest: String) {
-            println("Iniciando Pesquisa: requestId = $idRequest | Serviço = $nomeStreaming")
+        fun consultaIniciada(nome: String, idRequest: String) {
+            println("Pesquisando:   '$nome' | requestId: $idRequest")
         }
 
-        fun consultaFinalizada(nomeStreaming: String, idRequest: String) {
-            println("Pesquisa Finalizada: requestId = $idRequest | Serviço = $nomeStreaming")
+        fun consultaFinalizada(nome: String, idRequest: String) {
+            println("Finalizado:    '$nome' | requestId: $idRequest")
         }
 
         fun autenticacaoErro(nomeStreaming: String, msg: String, erros: Int) {
-            println("ERRO AUTENTICAÇÃO: Serviço = $nomeStreaming | Tentativa = $erros | $msg")
+            println("ERRO AUTENTICAÇÃO: $nomeStreaming | Tentativa: $erros | msg: $msg")
         }
 
         fun autenticacaoConcluida(nomeStreaming: String) {

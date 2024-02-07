@@ -33,23 +33,21 @@ class BuscaService(
             throw RequestParamNomeException()
 
         val nomeBusca = nome.tratarBuscaArtista()
-        println("Nome Buscado: $nomeBusca")
-
         val tipos = montaListaDeTipos(requestTipo)
         val regiao = verificaRegiao(requestRegiao)
         val requestParams = RequestParams(nomeBusca, regiao, tipos)
 
         val listaResultados = mutableListOf<ResultadoBusca>()
         runBlocking {
+            Logs.consultaIniciada(nomeBusca, requestParams.id.toString())
             commandStreamingAudio.forEach { streaming ->
                 launch {
-                    Logs.consultaIniciada(streaming.NOME_STREAMING, requestParams.id.toString())
                     val resultado = streaming.buscaPorArtista(requestParams)
                     listaResultados.add(resultado)
-                    Logs.consultaFinalizada(streaming.NOME_STREAMING, requestParams.id.toString())
                 }
             }
         }
+        Logs.consultaFinalizada(nomeBusca, requestParams.id.toString())
 
         return ResultadoView(nomeBusca, listaResultados)
     }
