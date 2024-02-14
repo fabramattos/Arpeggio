@@ -41,15 +41,15 @@ class YoutubeMusicService(
     }
 
     override suspend fun buscaPorArtista(requestParams: RequestParams): ResultadoBusca {
-        return ResultadoBuscaErros(NOME_STREAMING, "Desativado na API temporariamente")
-//        var totalDeAlbuns = 0
-//        val busca = runCatching {
-//            totalDeAlbuns = executaSelenium(requestParams)
-//        }
-//
-//        busca.onFailure { return ResultadoBuscaErros(NOME_STREAMING, busca.exceptionOrNull()!!.localizedMessage) }
-//
-//        return ResultadoBuscaConcluida(NOME_STREAMING, totalDeAlbuns)
+        //return ResultadoBuscaErros(NOME_STREAMING, "Desativado na API temporariamente")
+        var totalDeAlbuns = 0
+        val busca = runCatching {
+            totalDeAlbuns = executaSelenium(requestParams)
+        }
+
+        busca.onFailure { return ResultadoBuscaErros(NOME_STREAMING, busca.exceptionOrNull()!!.localizedMessage) }
+
+        return ResultadoBuscaConcluida(NOME_STREAMING, totalDeAlbuns)
     }
 
     private fun executaSelenium(requestParams: RequestParams): Int {
