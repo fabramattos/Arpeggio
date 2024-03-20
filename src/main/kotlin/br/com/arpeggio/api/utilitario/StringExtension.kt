@@ -5,7 +5,7 @@ import java.util.Base64
 /**
  * Remove espaços em branco demasiados da string. Retorna com apenas um " " entre as palavras, quando aplicável.
  */
-fun String.tratarBuscaArtista() : String {
+fun String.tratarBusca() : String {
     val split: List<String> = this.split(" ")
     val filtrado = split.filter { it.isNotEmpty() }
     var resposta = ""

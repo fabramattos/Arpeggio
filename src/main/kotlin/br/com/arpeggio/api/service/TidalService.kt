@@ -73,6 +73,11 @@ class TidalService(
         )
     }
 
+    override suspend fun buscaPorPodcast(requestParams: RequestParams): ResultadoBusca {
+        return ResultadoBuscaErros(NOME_STREAMING, "Ainda não implementado")
+        //TODO("Not yet implemented")
+    }
+
     private suspend fun buscaArtistas(requestParams: RequestParams): JsonNode {
         val uri = uriBuscaArtistas(requestParams)
         val response = chamadaApiTidal_BuscaArtistas(uri)
@@ -192,6 +197,7 @@ class TidalService(
     }
 
     private fun verificaSePodeIgnorarRestricaoAutoral(requestParams: RequestParams): Boolean {
-        return requestParams.tipos.containsAll(listOf(RequestTipo.ALBUM, RequestTipo.SINGLE))
+        return requestParams
+            .tipos.containsAll(listOf(RequestTipo.ALBUM, RequestTipo.SINGLE))
     }
 }

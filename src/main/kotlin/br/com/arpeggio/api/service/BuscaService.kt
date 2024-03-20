@@ -9,7 +9,7 @@ import br.com.arpeggio.api.infra.exception.RequestParamNomeException
 import br.com.arpeggio.api.infra.exception.RequestParamRegiaoException
 import br.com.arpeggio.api.infra.exception.RequestParamTipoException
 import br.com.arpeggio.api.infra.log.Logs
-import br.com.arpeggio.api.utilitario.tratarBuscaArtista
+import br.com.arpeggio.api.utilitario.tratarBusca
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Service
@@ -32,7 +32,7 @@ class BuscaService(
         if (nome.isBlank())
             throw RequestParamNomeException()
 
-        val nomeBusca = nome.tratarBuscaArtista()
+        val nomeBusca = nome.tratarBusca()
         val tipos = montaListaDeTipos(requestTipo)
         val regiao = verificaRegiao(requestRegiao)
         val requestParams = RequestParams(nomeBusca, regiao, tipos)
@@ -87,5 +87,28 @@ class BuscaService(
 
         return RequestRegiao.valueOf(regiao)
 
+    }
+
+    fun buscaPorPodcast(nome: String, requestRegiao: String): ResultadoView {
+        if (nome.isBlank())
+            throw RequestParamNomeException()
+
+        val nomeBusca = nome.tratarBusca()
+        val regiao = verificaRegiao(requestRegiao)
+        val requestParams = RequestParams(nomeBusca, regiao, emptyList())
+
+        val listaResultados = mutableListOf<ResultadoBusca>()
+        runBlocking {
+            Logs.consultaIniciada(nomeBusca, requestParams.id.toString())
+            commandStreamingAudio.forEach { streaming ->
+                launch {
+                    val resultado = streaming.buscaPorPodcast(requestParams)
+                    listaResultados.add(resultado)
+                }
+            }
+        }
+        Logs.consultaFinalizada(nomeBusca, requestParams.id.toString())
+
+        return ResultadoView(nomeBusca, listaResultados)
     }
 }

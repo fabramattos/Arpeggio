@@ -1,5 +1,5 @@
 package br.com.arpeggio.api.domain.streamings.spotify
 
-data class SpotifyResponseBusca (
+data class SpotifySearchArtistsResponse (
     val artists: SpotifyResponseArtists,
 )

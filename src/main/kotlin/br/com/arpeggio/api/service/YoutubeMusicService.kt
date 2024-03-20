@@ -52,6 +52,11 @@ class YoutubeMusicService(
         return ResultadoBuscaConcluidaAlbuns(NOME_STREAMING, totalDeAlbuns)
     }
 
+    override suspend fun buscaPorPodcast(requestParams: RequestParams): ResultadoBusca {
+        //TODO("Not yet implemented")
+        return ResultadoBuscaErros(NOME_STREAMING, "busca por podcast ainda não implementada")
+    }
+
     private fun executaSelenium(requestParams: RequestParams): Int {
         val options = ChromeOptions()
         // funcionamento headless com problema ao rodar em container. Com drivers locais funciona.

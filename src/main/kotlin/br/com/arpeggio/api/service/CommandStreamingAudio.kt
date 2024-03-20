@@ -7,4 +7,6 @@ interface CommandStreamingAudio {
 
     val NOME_STREAMING: String
     suspend fun buscaPorArtista(requestParams: RequestParams): ResultadoBusca
+
+    suspend fun buscaPorPodcast(requestParams: RequestParams): ResultadoBusca
 }

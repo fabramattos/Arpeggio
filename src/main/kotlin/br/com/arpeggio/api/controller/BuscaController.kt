@@ -42,4 +42,22 @@ class BuscaController(val service: BuscaService) {
         ResponseEntity.ok(service.buscaPorArtista(nome, regiao, tipo))
 
 
+    @GetMapping("/podcast")
+    fun buscaPodcast(
+        @RequestParam (required = true) nome: String,
+        @Parameter(
+            name = "regiao",
+            description = "País para realizar a consulta.\n\nValores aceitos: \"BR\", \"US\"",
+            schema = Schema(
+                type = "string",
+                example = "BR",
+                defaultValue = "BR"
+            )
+        )
+        @RequestParam(required = true) regiao: String,
+    ): ResponseEntity<ResultadoView> =
+
+        ResponseEntity.ok(service.buscaPorPodcast(nome, regiao))
+
+
 }
