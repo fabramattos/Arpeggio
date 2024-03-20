@@ -1,7 +1,7 @@
 package br.com.arpeggio.api.service
 
 import br.com.arpeggio.api.domain.resultado.ResultadoBusca
-import br.com.arpeggio.api.domain.resultado.ResultadoBuscaConcluida
+import br.com.arpeggio.api.domain.resultado.ResultadoBuscaConcluidaAlbuns
 import br.com.arpeggio.api.domain.resultado.ResultadoBuscaErros
 import br.com.arpeggio.api.domain.streamings.spotify.SpotifyArtist
 import br.com.arpeggio.api.domain.streamings.spotify.SpotifyResponseAlbum
@@ -99,7 +99,7 @@ class SpotifyService(
                 val artistas: List<SpotifyArtist> = buscaArtistas(requestParams)
                 val idArtista = encontraIdArtista(requestParams, artistas)
                 val totalDeAlbuns = buscaAlbunsDoArtista(requestParams, idArtista).total
-                return ResultadoBuscaConcluida(NOME_STREAMING, totalDeAlbuns)
+                return ResultadoBuscaConcluidaAlbuns(NOME_STREAMING, totalDeAlbuns)
             }
 
             resultado.onFailure {

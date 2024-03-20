@@ -1,6 +1,6 @@
 package br.com.arpeggio.api.service
 
-import br.com.arpeggio.api.domain.resultado.ResultadoBuscaConcluida
+import br.com.arpeggio.api.domain.resultado.ResultadoBuscaConcluidaAlbuns
 import br.com.arpeggio.api.infra.busca.RequestParams
 import br.com.arpeggio.api.infra.busca.RequestRegiao
 import br.com.arpeggio.api.infra.busca.RequestTipo
@@ -33,7 +33,7 @@ class DeezerServiceTest {
         // configura mock com delay aleatorio.
         coEvery { deezerService.buscaPorArtista(any()) } coAnswers {
             delay(100) // simula um tempo de resposta da API fixo
-            ResultadoBuscaConcluida("Deezer", Random.nextInt())
+            ResultadoBuscaConcluidaAlbuns("Deezer", Random.nextInt())
         }
 
         // executa as chamadas ao service de forma assincrona
@@ -71,7 +71,7 @@ class DeezerServiceTest {
         // configura mock com delay aleatorio.
         coEvery { deezerService.buscaPorArtista(any()) } coAnswers {
             delay(Random.nextLong(500))
-            ResultadoBuscaConcluida("Deezer", Random.nextInt())
+            ResultadoBuscaConcluidaAlbuns("Deezer", Random.nextInt())
         }
 
         // executa as chamadas ao service de forma assincrona

@@ -6,7 +6,7 @@ import br.com.arpeggio.api.infra.exception.FalhaAoBuscarArtistasException
 import br.com.arpeggio.api.infra.exception.FalhaNaRequisicaoAoStreamingException
 import br.com.arpeggio.api.infra.log.Logs
 import br.com.arpeggio.api.domain.resultado.ResultadoBusca
-import br.com.arpeggio.api.domain.resultado.ResultadoBuscaConcluida
+import br.com.arpeggio.api.domain.resultado.ResultadoBuscaConcluidaAlbuns
 import br.com.arpeggio.api.domain.resultado.ResultadoBuscaErros
 import br.com.arpeggio.api.domain.streamings.deezer.DeezerAlbum
 import br.com.arpeggio.api.domain.streamings.deezer.DeezerArtist
@@ -81,7 +81,7 @@ class DeezerService(
                 val artistas: List<DeezerArtist> = buscaArtistas(requestParams.busca)
                 val idArtista = encontraIdArtista(requestParams.busca, artistas)
                 val totalDeAlbuns = buscaAlbunsDoArtista(requestParams, idArtista).size
-                return ResultadoBuscaConcluida(NOME_STREAMING, totalDeAlbuns)
+                return ResultadoBuscaConcluidaAlbuns(NOME_STREAMING, totalDeAlbuns)
             }
 
             response.onFailure {

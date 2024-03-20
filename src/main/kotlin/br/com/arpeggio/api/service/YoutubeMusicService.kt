@@ -1,7 +1,7 @@
 package br.com.arpeggio.api.service
 
 import br.com.arpeggio.api.domain.resultado.ResultadoBusca
-import br.com.arpeggio.api.domain.resultado.ResultadoBuscaConcluida
+import br.com.arpeggio.api.domain.resultado.ResultadoBuscaConcluidaAlbuns
 import br.com.arpeggio.api.domain.resultado.ResultadoBuscaErros
 import br.com.arpeggio.api.infra.busca.RequestParams
 import jakarta.annotation.PostConstruct
@@ -49,7 +49,7 @@ class YoutubeMusicService(
 
         busca.onFailure { return ResultadoBuscaErros(NOME_STREAMING, busca.exceptionOrNull()!!.localizedMessage) }
 
-        return ResultadoBuscaConcluida(NOME_STREAMING, totalDeAlbuns)
+        return ResultadoBuscaConcluidaAlbuns(NOME_STREAMING, totalDeAlbuns)
     }
 
     private fun executaSelenium(requestParams: RequestParams): Int {
