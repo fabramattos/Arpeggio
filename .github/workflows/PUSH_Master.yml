@@ -30,9 +30,6 @@ jobs:
       - name: Gradle Test
         run: ./gradlew test
 
-      - name: Gradle Clean
-        run: ./gradlew clean
-
       - name: Gradle Build
         run: ./gradlew build
 
