@@ -2,7 +2,7 @@
 **Arpeggio** é um aplicativo de comparação de streamings de áudio.<br>
 Com ele, o usuário pode:<br>
 - ☑️ consultar o número de álbuns de um artista ou banda, presentes nos streamings.<br>
-- ☑️ consultar o número de episódios um Podcast, presentes nos streamings.<br>
+- ☑️ consultar o número de episódios de um Podcast, presentes nos streamings.<br>
 - ❎ terminar uma partida de Uno sem brigar com demais jogadores.<br>
 
 No momento, conectamos com: Spotify, Deezer, Tidal e Youtube Music.<br>
