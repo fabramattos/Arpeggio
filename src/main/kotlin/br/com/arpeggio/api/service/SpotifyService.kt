@@ -36,7 +36,7 @@ class SpotifyService(
     }
 
 
-    private suspend fun buscaArtistas(requestParams: RequestParams): List<SpotifyArtistData> {
+    private suspend fun buscaArtista(requestParams: RequestParams): SpotifyArtistData {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.spotify.com/v1/search")
             .queryParam("q", requestParams.busca)
@@ -54,10 +54,11 @@ class SpotifyService(
             .bodyToMono<SpotifySearchArtistsResponse>()
             .map { it.artists.items }
             .awaitSingleOrNull()
-            ?: throw FalhaAoBuscarArtistasException()
+            ?.first()
+            ?: throw ArtistaNaoEncontradoException()
     }
 
-    private suspend fun buscaPodcasts(requestParams: RequestParams): List<SpotifyShowData> {
+    private suspend fun buscaPodcasts(requestParams: RequestParams): SpotifyShowData {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.spotify.com/v1/search")
             .queryParam("q", requestParams.busca)
@@ -75,22 +76,9 @@ class SpotifyService(
             .bodyToMono<SpotifySearchShowsResponse>()
             .map { it.shows.items }
             .awaitSingleOrNull()
-            ?: throw FalhaAoBuscarArtistasException()
-    }
-
-
-    private fun encontraIdArtista(requestParams: RequestParams, artistas: List<SpotifyArtistData>) =
-        artistas
-            .firstOrNull { it.name.equals(requestParams.busca, true) }
-            ?.id
-            ?: throw ArtistaNaoEncontradoException()
-
-    private fun encontraTotalEpisodios(requestParams: RequestParams, podcasts: List<SpotifyShowData>) =
-        podcasts
-            .firstOrNull { it.name.equals(requestParams.busca, true) }
-            ?.total_episodes
+            ?.first()
             ?: throw PodcastNaoEncontradoException()
-
+    }
 
     private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: String): SpotifyResponseAlbum {
         val uri = UriComponentsBuilder
@@ -114,10 +102,9 @@ class SpotifyService(
         var erros = 0
         while (erros < 3) {
             val resultado = runCatching {
-                val artistas: List<SpotifyArtistData> = buscaArtistas(requestParams)
-                val idArtista = encontraIdArtista(requestParams, artistas)
-                val totalDeAlbuns = buscaAlbunsDoArtista(requestParams, idArtista).total
-                return ResultadoBuscaConcluidaAlbuns(NOME_STREAMING, totalDeAlbuns)
+                val artista = buscaArtista(requestParams)
+                val totalDeAlbuns = buscaAlbunsDoArtista(requestParams, artista.id).total
+                return ResultadoBuscaConcluidaAlbuns(NOME_STREAMING, artista.name, totalDeAlbuns)
             }
 
             resultado.onFailure {
@@ -140,9 +127,8 @@ class SpotifyService(
         var erros = 0
         while (erros < 3) {
             val resultado = runCatching {
-                val podcasts: List<SpotifyShowData> = buscaPodcasts(requestParams)
-                val totalDeEpisodios = encontraTotalEpisodios(requestParams, podcasts)
-                return ResultadoBuscaConcluidaPodcast(NOME_STREAMING, totalDeEpisodios)
+                val podcast = buscaPodcasts(requestParams)
+                return ResultadoBuscaConcluidaPodcast(NOME_STREAMING, podcast.name, podcast.total_episodes)
             }
 
             resultado.onFailure {

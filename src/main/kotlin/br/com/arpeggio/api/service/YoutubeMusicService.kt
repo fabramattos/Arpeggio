@@ -48,8 +48,8 @@ class YoutubeMusicService(
         }
 
         busca.onFailure { return ResultadoBuscaErros(NOME_STREAMING, busca.exceptionOrNull()!!.localizedMessage) }
-
-        return ResultadoBuscaConcluidaAlbuns(NOME_STREAMING, totalDeAlbuns)
+        //TODO retornar o nome do artista encontrado
+        return ResultadoBuscaConcluidaAlbuns(NOME_STREAMING, "'variavel em teste'", totalDeAlbuns)
     }
 
     override suspend fun buscaPorPodcast(requestParams: RequestParams): ResultadoBusca {

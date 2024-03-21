@@ -5,10 +5,7 @@ import br.com.arpeggio.api.domain.resultado.ResultadoBusca
 import br.com.arpeggio.api.domain.resultado.ResultadoBuscaConcluidaAlbuns
 import br.com.arpeggio.api.domain.resultado.ResultadoBuscaConcluidaPodcast
 import br.com.arpeggio.api.domain.resultado.ResultadoBuscaErros
-import br.com.arpeggio.api.domain.streamings.deezer.DeezerIdDetail
-import br.com.arpeggio.api.domain.streamings.deezer.DeezerData
-import br.com.arpeggio.api.domain.streamings.deezer.DeezerSearchIdDetailResponse
-import br.com.arpeggio.api.domain.streamings.deezer.DeezerSearchResponse
+import br.com.arpeggio.api.domain.streamings.deezer.*
 import br.com.arpeggio.api.infra.busca.RequestParams
 import br.com.arpeggio.api.infra.exception.*
 import kotlinx.coroutines.reactor.awaitSingleOrNull
@@ -25,7 +22,7 @@ class DeezerService(
 ) : CommandStreamingAudio {
 
 
-    private suspend fun buscaArtistas(nome: String): List<DeezerData> {
+    private suspend fun buscaArtista(nome: String): DeezerArtistData {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.deezer.com/search/artist")
             .queryParam("q", nome)
@@ -36,13 +33,14 @@ class DeezerService(
             .get()
             .uri(uri)
             .retrieve()
-            .bodyToMono<DeezerSearchResponse>()
+            .bodyToMono<DeezerSearchArtistResponse>()
             .map { it.data }
             .awaitSingleOrNull()
-            ?: throw FalhaAoBuscarArtistasException()
+            ?.first()
+            ?: throw ArtistaNaoEncontradoException()
     }
 
-    private suspend fun buscaPodcasts(nome: String): List<DeezerData> {
+    private suspend fun buscaPodcasts(nome: String): DeezerPodcastData {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.deezer.com/search/podcast")
             .queryParam("q", nome)
@@ -53,18 +51,12 @@ class DeezerService(
             .get()
             .uri(uri)
             .retrieve()
-            .bodyToMono<DeezerSearchResponse>()
+            .bodyToMono<DeezerSearchPodcastResponse>()
             .map { it.data }
             .awaitSingleOrNull()
-            ?: throw FalhaAoBuscarPodcastsException()
-    }
-
-
-    private fun encontraId(nome: String, dadosResponse: List<DeezerData>) =
-        dadosResponse
-            .find { it.name.equals(nome, true) || it.title.equals(nome, true)}
-            ?.id
+            ?.first()
             ?: throw PodcastNaoEncontradoException()
+    }
 
 
     private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: Int): List<DeezerIdDetail> {
@@ -108,10 +100,9 @@ class DeezerService(
         var erros = 0
         while(erros < 3){
             val response = runCatching {
-                val artistas: List<DeezerData> = buscaArtistas(requestParams.busca)
-                val idArtista = encontraId(requestParams.busca, artistas)
-                val totalDeAlbuns = buscaAlbunsDoArtista(requestParams, idArtista).size
-                return ResultadoBuscaConcluidaAlbuns(NOME_STREAMING, totalDeAlbuns)
+                val artista = buscaArtista(requestParams.busca)
+                val totalDeAlbuns = buscaAlbunsDoArtista(requestParams, artista.id).size
+                return ResultadoBuscaConcluidaAlbuns(NOME_STREAMING, artista.name, totalDeAlbuns)
             }
 
             response.onFailure {
@@ -130,10 +121,9 @@ class DeezerService(
         var erros = 0
         while(erros < 3){
             val response = runCatching {
-                val podcasts: List<DeezerData> = buscaPodcasts(requestParams.busca)
-                val idPodcast = encontraId(requestParams.busca, podcasts)
-                val totalDeEpisodios = buscaEpisodiosDoPodcast(idPodcast)
-                return ResultadoBuscaConcluidaPodcast(NOME_STREAMING, totalDeEpisodios)
+                val podcast = buscaPodcasts(requestParams.busca)
+                val totalDeEpisodios = buscaEpisodiosDoPodcast(podcast.id)
+                return ResultadoBuscaConcluidaPodcast(NOME_STREAMING, podcast.title, totalDeEpisodios)
             }
 
             response.onFailure {

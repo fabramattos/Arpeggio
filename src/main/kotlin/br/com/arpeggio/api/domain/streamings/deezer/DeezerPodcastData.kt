@@ -1,8 +1,7 @@
 package br.com.arpeggio.api.domain.streamings.deezer
 
-data class DeezerData (
+data class DeezerPodcastData (
         val id: Int,
-        val name: String?,
-        val title: String?,
+        val title: String,
         val link: String?,
 )

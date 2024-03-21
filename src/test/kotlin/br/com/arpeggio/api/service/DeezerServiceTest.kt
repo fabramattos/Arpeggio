@@ -33,7 +33,7 @@ class DeezerServiceTest {
         // configura mock com delay aleatorio.
         coEvery { deezerService.buscaPorArtista(any()) } coAnswers {
             delay(100) // simula um tempo de resposta da API fixo
-            ResultadoBuscaConcluidaAlbuns("Deezer", Random.nextInt())
+            ResultadoBuscaConcluidaAlbuns("Deezer", "artista teste", Random.nextInt())
         }
 
         // executa as chamadas ao service de forma assincrona
@@ -71,7 +71,7 @@ class DeezerServiceTest {
         // configura mock com delay aleatorio.
         coEvery { deezerService.buscaPorArtista(any()) } coAnswers {
             delay(Random.nextLong(500))
-            ResultadoBuscaConcluidaAlbuns("Deezer", Random.nextInt())
+            ResultadoBuscaConcluidaAlbuns("Deezer", "artista teste", Random.nextInt())
         }
 
         // executa as chamadas ao service de forma assincrona

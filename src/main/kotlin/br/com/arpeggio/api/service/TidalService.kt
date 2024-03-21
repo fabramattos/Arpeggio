@@ -3,6 +3,7 @@ package br.com.arpeggio.api.service
 import br.com.arpeggio.api.domain.resultado.ResultadoBusca
 import br.com.arpeggio.api.domain.resultado.ResultadoBuscaConcluidaAlbuns
 import br.com.arpeggio.api.domain.resultado.ResultadoBuscaErros
+import br.com.arpeggio.api.domain.streamings.tidal.TidalResult
 import br.com.arpeggio.api.infra.busca.RequestParams
 import br.com.arpeggio.api.infra.busca.RequestTipo
 import br.com.arpeggio.api.infra.exception.*
@@ -46,10 +47,10 @@ class TidalService(
         var erros = 0
         while (erros < 3) {
             val resultadoBusca = runCatching {
-                val artistas = buscaArtistas(requestParams)
-                val idArtista = encontraIdArtista(requestParams, artistas)
-                val totalDeAlbuns = buscaAlbunsDoArtista(requestParams, idArtista)
-                return ResultadoBuscaConcluidaAlbuns(NOME_STREAMING, totalDeAlbuns)
+                val artista = buscaArtista(requestParams)
+                    .apply { qty = buscaAlbunsDoArtista(requestParams, id)}
+
+                return ResultadoBuscaConcluidaAlbuns(NOME_STREAMING, artista.name, artista.qty)
             }
 
             resultadoBusca.onFailure {
@@ -74,17 +75,28 @@ class TidalService(
     }
 
     override suspend fun buscaPorPodcast(requestParams: RequestParams): ResultadoBusca {
-        return ResultadoBuscaErros(NOME_STREAMING, "Ainda não implementado")
+        return ResultadoBuscaErros(NOME_STREAMING, "busca por podcast ainda não implementada")
         //TODO("Not yet implemented")
     }
 
-    private suspend fun buscaArtistas(requestParams: RequestParams): JsonNode {
+    private suspend fun buscaArtista(requestParams: RequestParams): TidalResult {
         val uri = uriBuscaArtistas(requestParams)
         val response = chamadaApiTidal_BuscaArtistas(uri)
 
-        return ObjectMapper()
+        val artistaDados = ObjectMapper()
             .readTree(response)
             .path("artists") // array de artistas. Dentro, RESOURCES contem os dados de cada artista retornado
+            .first()
+            .path("resource")
+            ?: throw ArtistaNaoEncontradoException()
+
+        return TidalResult(
+            artistaDados.path("id").asText(),
+            artistaDados.path("name").asText(),
+            0
+        )
+
+
     }
 
     private suspend fun chamadaApiTidal_BuscaArtistas(uri: URI): String =
@@ -110,16 +122,7 @@ class TidalService(
         .buildAndExpand()
         .toUri()
 
-    private fun encontraIdArtista(requestParams: RequestParams, artistasNode: JsonNode): String {
-        for (artistaNode in artistasNode) {
-            val nomeArtista = artistaNode
-                .path("resource")
-                .path("name").asText()
-            if (nomeArtista.equals(requestParams.busca, true))
-                return artistaNode.path("resource").path("id").asText()
-        }
-        throw ArtistaNaoEncontradoException()
-    }
+
 
     private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: String): Int {
         var errosReq = 0
