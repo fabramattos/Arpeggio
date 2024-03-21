@@ -1,8 +1,12 @@
 # 🎧 Arpeggio 🎧
-**Arpeggio** é um aplicativo de comparação de streaming de músicas em que o usuário pode consultar o número de álbuns de seu artista ou banda favorita de um serviço de streaming musical.<br>
-Este aplicativo funciona usando as APIs dos principais serviços de streaming de música disponíveis.<br>
-No momento, conectamos com: Spotify, Deezer e Tidal e Youtube Music.<br>
-🚨 **_Este repositório é relativo ao Backend utilizado pelos aplicativos (web e android)_** 🚨
+**Arpeggio** é um aplicativo de comparação de streamings de áudio.<br>
+Com ele, o usuário pode:<br>
+- ☑️ consultar o número de álbuns de um artista ou banda, presentes nos streamings.<br>
+- ☑️ consultar o número de episódios um Podcast, presentes nos streamings.<br>
+- ❎ terminar uma partida de Uno sem brigar com demais jogadores.<br>
+
+No momento, conectamos com: Spotify, Deezer, Tidal e Youtube Music.<br>
+🚨 **_Este repositório é relativo ao Backend utilizado pelos versões web e android_** 🚨
 
 ## 🚧 Status do projeto 🚧
 ![Badge em Desenvolvimento](http://img.shields.io/static/v1?label=STATUS&message=EM%20DESENVOLVIMENTO&color=GREEN&style=for-the-badge)
@@ -11,7 +15,8 @@ No momento, conectamos com: Spotify, Deezer e Tidal e Youtube Music.<br>
 (em breve)
 
 ## Como utilizar
-(em breve)
+No momento, podem testar as funcionalidades pela documentação interativa do Swagger-UI [**neste link**](https://arpeggio.up.railway.app/doc/swagger-ui/index.html)
+
 
 ## 💡 Futuras implementações 💡
 ### Novos Streamings:
@@ -25,8 +30,13 @@ No momento, conectamos com: Spotify, Deezer e Tidal e Youtube Music.<br>
   - Apple sendo apple. Necessária assinatura para ter acesso à API. Inviável no momento 💸
 
 ### Novas funcionalidades:
-- consulta de Podcast
-- cadastro de usuários
+- [ ] consulta de Podcast
+  - [x] spotify
+  - [x] deezer
+  - [ ] tidal
+  - [ ] youtube music
+        
+- [ ] cadastro de usuários
 
 ## 💻 Desenvolvedores 💻
 
