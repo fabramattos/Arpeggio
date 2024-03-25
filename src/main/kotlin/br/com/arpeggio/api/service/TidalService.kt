@@ -42,7 +42,6 @@ class TidalService(
             }
     }
 
-
     override suspend fun buscaPorArtista(requestParams: RequestParams): ResultadoBusca {
         var erros = 0
         while (erros < 3) {
@@ -76,7 +75,7 @@ class TidalService(
 
     override suspend fun buscaPorPodcast(requestParams: RequestParams): ResultadoBusca {
         return ResultadoBuscaErros(NOME_STREAMING, "busca por podcast ainda não implementada")
-        //TODO("Not yet implemented")
+        //TODO(Tidal não possui catálogo de podcast)
     }
 
     private suspend fun buscaArtista(requestParams: RequestParams): TidalResult {
@@ -95,8 +94,6 @@ class TidalService(
             artistaDados.path("name").asText(),
             0
         )
-
-
     }
 
     private suspend fun chamadaApiTidal_BuscaArtistas(uri: URI): String =

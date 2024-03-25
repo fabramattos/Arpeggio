@@ -4,8 +4,8 @@ version: '3'
 
 services:
   selenium:
-    container_name: chrome-alone
-    image: selenium/standalone-chrome:latest
+    container_name: edge-alone
+    image: selenium/standalone-edge:latest
     shm_size: 2g
     networks:
       - selenium-network
@@ -52,8 +52,8 @@ services:
     env_file:
       - .env
     environment:
-      CHROME_HOST: selenium
-      CHROME_PORT: 4444
+      WEBDRIVER_HOST: selenium
+      WEBDRIVER_PORT: 4444
       JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,address=*:5005,server=y,suspend=n
 
     command: ["java", "-XX:+UseContainerSupport", "-jar", "app.jar"]

@@ -11,6 +11,6 @@ secrets:
     id: ${TIDAL_API_CLIENT_ID}
     secret: ${TIDAL_API_CLIENT_SECRET}
 
-chrome:
-  host: ${CHROME_HOST}
-  port: ${CHROME_PORT}
+webdriver:
+  host: ${WEBDRIVER_HOST:localhost}
+  port: ${WEBDRIVER_PORT:4444}

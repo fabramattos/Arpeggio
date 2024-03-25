@@ -3,12 +3,17 @@ package br.com.arpeggio.api.service
 import br.com.arpeggio.api.domain.resultado.ResultadoBusca
 import br.com.arpeggio.api.domain.resultado.ResultadoBuscaConcluidaAlbuns
 import br.com.arpeggio.api.domain.resultado.ResultadoBuscaErros
+import br.com.arpeggio.api.domain.streamings.youtube.YoutubeResult
 import br.com.arpeggio.api.infra.busca.RequestParams
+import br.com.arpeggio.api.infra.busca.RequestTipo
 import jakarta.annotation.PostConstruct
 import org.openqa.selenium.By
+import org.openqa.selenium.By.cssSelector
+import org.openqa.selenium.By.xpath
 import org.openqa.selenium.JavascriptExecutor
+import org.openqa.selenium.PageLoadStrategy
 import org.openqa.selenium.WebDriver
-import org.openqa.selenium.chrome.ChromeOptions
+import org.openqa.selenium.edge.EdgeOptions
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.Wait
@@ -18,38 +23,42 @@ import org.springframework.stereotype.Service
 import java.net.URL
 import java.time.Duration
 
-private const val SELETOR_XPATH_BOTAO_ARTISTA: String = "//yt-formatted-string[text()='Artistas']"
-private const val SELETOR_CSS_ALBUNS_DO_ARTISTA: String = "#details > yt-formatted-string"
-private const val SELETOR_CSS_LISTA_ARTISTAS: String = "#contents > ytmusic-grid-renderer"
+private const val XPATH_BOTAO_ARTISTA: String = "//yt-formatted-string[text()='Artistas']"
+private const val XPATH_CABECALHO_LISTA_ARTISTAS: String =
+    "//*[@id=\"contents\"]/ytmusic-shelf-renderer/div[1]/h2/yt-formatted-string"
+private const val CSS_LISTA_ARTISTAS_PRIMEIRO_ITEM: String =
+    "#contents > ytmusic-responsive-list-item-renderer:nth-child(1) > a"
+
+private const val CSS_BOTAO_ALBUNS_DO_ARTISTA_AGUARDAR: String = "#details > yt-formatted-string"
+private const val CSS_BOTAO_ALBUNS_DO_ARTISTA_LINK: String = "#details > yt-formatted-string > a"
+private const val CSS_LISTA_ALBUNS_ARTISTA: String = "#contents > ytmusic-grid-renderer"
 
 @Service
 class YoutubeMusicService(
     override val NOME_STREAMING: String = "Youtube Music",
 
-    @Value("\${chrome.host}")
-    private val CHROME_HOST: String,
+    @Value("\${webdriver.host}")
+    private val WEBDRIVER_HOST: String,
 
-    @Value("\${chrome.port}")
-    private val CHROME_PORT: String,
+    @Value("\${webdriver.port}")
+    private val WEBDRIVER_PORT: String,
 
-    private var driver: RemoteWebDriver?,
+    private var driver: WebDriver?,
 ) : CommandStreamingAudio {
 
     @PostConstruct
     fun logaUrlDoChrome() {
-        println("Selenium: url do driver: http://${CHROME_HOST}:${CHROME_PORT}")
+        println("Selenium: url do driver: http://${WEBDRIVER_HOST}:${WEBDRIVER_PORT}")
     }
 
     override suspend fun buscaPorArtista(requestParams: RequestParams): ResultadoBusca {
-        //return ResultadoBuscaErros(NOME_STREAMING, "Desativado na API temporariamente")
-        var totalDeAlbuns = 0
-        val busca = runCatching {
-            totalDeAlbuns = executaSelenium(requestParams)
-        }
+        val busca = runCatching { executaSelenium(requestParams) }
+        val artista = busca.getOrNull()
 
-        busca.onFailure { return ResultadoBuscaErros(NOME_STREAMING, busca.exceptionOrNull()!!.localizedMessage) }
-        //TODO retornar o nome do artista encontrado
-        return ResultadoBuscaConcluidaAlbuns(NOME_STREAMING, "'variavel em teste'", totalDeAlbuns)
+        return if (artista == null)
+            ResultadoBuscaErros(NOME_STREAMING, busca.exceptionOrNull()!!.localizedMessage)
+        else
+            ResultadoBuscaConcluidaAlbuns(NOME_STREAMING, artista.name, artista.qty)
     }
 
     override suspend fun buscaPorPodcast(requestParams: RequestParams): ResultadoBusca {
@@ -57,20 +66,21 @@ class YoutubeMusicService(
         return ResultadoBuscaErros(NOME_STREAMING, "busca por podcast ainda não implementada")
     }
 
-    private fun executaSelenium(requestParams: RequestParams): Int {
-        val options = ChromeOptions()
-        // funcionamento headless com problema ao rodar em container. Com drivers locais funciona.
+    private fun executaSelenium(requestParams: RequestParams): YoutubeResult {
+        val options = EdgeOptions()
 
-        //options.addArguments("headless=new")
+//        options.addArguments("headless=new")
+        options.setPageLoadStrategy(PageLoadStrategy.NORMAL)
         options.addArguments("--ignore-ssl-errors=yes")
         options.addArguments("--ignore-certificate-errors")
         options.addArguments("--lang=pt-BR") // garantindo que o navegador use pt-br independente de onde é instanciado.
 
-
-        var qtdeAlbuns = 0
-
         val navegacao = runCatching {
-            driver = RemoteWebDriver(URL("http://${CHROME_HOST}:${CHROME_PORT}"), options)
+            // para executar via docker e em ambiente de prod
+            driver = RemoteWebDriver(URL("http://${WEBDRIVER_HOST}:${WEBDRIVER_PORT}"), options)
+
+            // para executar localmente sem docker em ambiente dev
+//            driver = EdgeDriver()
 
             driver?.let {
                 val wait: Wait<WebDriver> = WebDriverWait(it, Duration.ofSeconds(10))
@@ -79,28 +89,41 @@ class YoutubeMusicService(
                 // Acesse a URL
                 it.get(url)
                 cliqueBotaoArtista(wait)
-                cliqueNoArtistaDaLista(requestParams, wait)
+                val artista = cliqueNoArtistaDaLista(wait)
                 cliqueBotaoAlbumDoArtista(wait)
-                qtdeAlbuns = calculaTotalDeAlbuns(wait)
-            } ?: throw RuntimeException("Erro ao criar o Selenium Remote WebDriver")
+                artista.apply { qty = retornaTodosAlbuns(wait, requestParams) }
+                return@runCatching artista
+            } ?: throw RuntimeException("Falha ao criar Remote Web Driver")
         }
 
-        driver?.let {
-            println("fechou driver")
-            it.quit()
-        }
+        println("fechou driver")
+        driver?.quit()
 
-        navegacao.onFailure {
-            throw RuntimeException(navegacao.exceptionOrNull()!!.localizedMessage)
-        }
-
-        return qtdeAlbuns
+        return navegacao
+            .getOrElse { throw RuntimeException(navegacao.exceptionOrNull()!!.localizedMessage) }
     }
 
-    private fun calculaTotalDeAlbuns(wait: Wait<WebDriver>): Int {
-        wait
-            .until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(SELETOR_CSS_LISTA_ARTISTAS)))
 
+    private fun retornaTodosAlbuns(wait: Wait<WebDriver>, requestParams: RequestParams): Int {
+        wait
+            .until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(CSS_LISTA_ALBUNS_ARTISTA)))
+
+        val listaItens = javaScript_retornaTodosItensDoArtista()
+
+        val listaItensEnum: List<RequestTipo> = listaItens.map {
+            when (it) {
+                "ALBUM" -> RequestTipo.ALBUM
+                "SINGLE" -> RequestTipo.SINGLE
+                else -> RequestTipo.EP
+            }
+        }
+
+        return listaItensEnum
+            .filter { requestParams.tipos.contains(it) }
+            .size
+    }
+
+    private fun javaScript_retornaTodosItensDoArtista(): MutableList<String> {
         val script = """
                 var itemsContainer = document.querySelector('#contents > ytmusic-grid-renderer > #items');
     
@@ -108,35 +131,82 @@ class YoutubeMusicService(
                 if (itemsContainer) {
                     // Obtenha todos os itens dentro do contêiner
                     var items = itemsContainer.children;
-                    return items.length;
+                    var listaItens = [];
+
+                    // Iterar sobre os itens e extrair o texto
+                    for (var i = 0; i < items.length; i++) {
+                        var item = items[i];
+                        var details = item.querySelector('div.details.style-scope.ytmusic-two-row-item-renderer');
+                        var texto = details.querySelector('span > yt-formatted-string > span:nth-child(1)').innerText;
+                        
+                         // Substituir o texto pelos valores do enum
+                        switch(texto) {
+                            case 'Álbum':
+                                listaItens.push('ALBUM');
+                                break;
+                            case 'Single':
+                                listaItens.push('SINGLE');
+                                break;
+                            case 'EP':
+                                listaItens.push('EP');
+                                break;
+                        }
+                    }
+
+                    // Retornar a lista de itens
+                    return listaItens;
                     
-                } else{
-                    return -1;
+                } else {
+                    return null;
                 }
             """.trimIndent()
 
-        val result = (driver as JavascriptExecutor).executeScript(script) as Long
-
-        return result.toInt()
+        // Executar o script JavaScript
+        return (driver as JavascriptExecutor).executeScript(script) as MutableList<String>
     }
 
-    private fun cliqueBotaoAlbumDoArtista(wait: Wait<WebDriver>) = wait
-        .until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(SELETOR_CSS_ALBUNS_DO_ARTISTA)))
-        .click()
+    private fun cliqueBotaoAlbumDoArtista(wait: Wait<WebDriver>) {
+        wait
+            .until(ExpectedConditions.presenceOfElementLocated(cssSelector(CSS_BOTAO_ALBUNS_DO_ARTISTA_AGUARDAR)))
 
-    private fun cliqueNoArtistaDaLista(requestParams: RequestParams, wait: Wait<WebDriver>) {
-
-        val artistLink = wait
-            .until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("a[aria-label='${requestParams.busca}' i]")))
-            .getAttribute("href")
+        val linkAlbuns = driver
+            ?.findElement(cssSelector(CSS_BOTAO_ALBUNS_DO_ARTISTA_LINK))
+            ?: throw RuntimeException("Erro ao recuperar botão ALBUNS")
 
         driver
-            ?.get(artistLink)
-            ?: throw RuntimeException("Erro ao recuperar link da página do artista")
+            ?.get(linkAlbuns.getAttribute("href"))
+            ?: throw RuntimeException("Erro ao tentar acessar ALBUNS do artista")
     }
 
-    private fun cliqueBotaoArtista(wait: Wait<WebDriver>) = wait
-        .until(ExpectedConditions.presenceOfElementLocated(By.xpath(SELETOR_XPATH_BOTAO_ARTISTA)))
-        .click()
+    private fun cliqueNoArtistaDaLista(wait: Wait<WebDriver>): YoutubeResult {
+        //aguardar xpath de uma lista com cabeçalho especifico
+        wait
+            .until(
+                ExpectedConditions.textToBePresentInElementLocated(
+                    xpath(XPATH_CABECALHO_LISTA_ARTISTAS),
+                    "Artistas"
+                )
+            )
+
+        val itemArtista = driver
+            ?.findElement(cssSelector(CSS_LISTA_ARTISTAS_PRIMEIRO_ITEM))
+            ?: throw RuntimeException("Erro ao recuperar artista")
+
+        val artista = YoutubeResult(
+            itemArtista.getAttribute("href"),
+            itemArtista.getAttribute("aria-label"),
+            0
+        )
+
+        itemArtista.click()
+
+        return artista
+    }
+
+    private fun cliqueBotaoArtista(wait: Wait<WebDriver>) {
+        wait
+            .until(ExpectedConditions.presenceOfElementLocated(xpath(XPATH_BOTAO_ARTISTA)))
+            .click()
+    }
 
 }
