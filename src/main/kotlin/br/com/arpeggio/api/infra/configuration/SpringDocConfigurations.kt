@@ -18,7 +18,7 @@ class SpringDocConfigurations {
             description = """
                         DESCRIÇÃO:
                         API para consulta simultanea nos seguintes  streamings de audio:
-                            Spotify, Deezer, Tidal, YouTube Music (desativado temporariamente).
+                            Spotify, Deezer, Tidal e YouTube Music.
                         
                         COMO USAR:
                         Pesquise por um artista, informando o país para consulta e o tipo de conteúdo desejado e retornaremos
