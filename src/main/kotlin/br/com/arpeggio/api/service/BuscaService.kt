@@ -70,11 +70,11 @@ class BuscaService(
         return tipos
             .map { RequestTipo.valueOf(it.uppercase()) }
             .toMutableList()
-            .also {
-                if (RequestTipo.SINGLE in it)
-                    it + RequestTipo.EP
-                else if (RequestTipo.EP in it)
-                    it + RequestTipo.SINGLE
+            .apply {
+                if (contains(RequestTipo.SINGLE))
+                    add(RequestTipo.EP)
+                else if (contains(RequestTipo.EP))
+                    add(RequestTipo.SINGLE)
             }
     }
 
