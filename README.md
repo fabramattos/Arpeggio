@@ -14,8 +14,7 @@ No momento, conectamos com: Spotify, Deezer, Tidal e Youtube Music.<br>
 ## 🚀 Stack 🚀
  - Kotlin 1.9
  - Kotlin Coroutines
- - Spring Boot Web
- - Spring Boot WebFlux
+ - Spring Boot (web, WebFlux)
  - Docker
  - Docker-Compose
  - Selenium Web Driver
