@@ -52,42 +52,26 @@ class BuscaService(
         return ResultadoView(nomeBusca, listaResultados)
     }
 
-    private fun montaListaDeTipos(requestTipo: String): MutableList<RequestTipo> {
-        val tiposValidos = RequestTipo.entries.map { it.name }
+    private fun montaListaDeTipos(requestTipo: String): List<RequestTipo> =
+        runCatching {
+            requestTipo
+                .replace(" ", "")
+                .split(",")
+                .map { RequestTipo.valueOf(it.uppercase()) }
+                .toMutableList()
+                .apply {
+                    if (contains(RequestTipo.SINGLE))
+                        add(RequestTipo.EP)
+                    else if (contains(RequestTipo.EP))
+                        add(RequestTipo.SINGLE)
+                }
+        }.getOrElse { throw RequestParamTipoException() }
 
-        val tipos = requestTipo
-            .replace(" ", "")
-            .split(",")
-            .toMutableList()
 
-        val tiposInvalidos = tipos
-            .filter { it.uppercase() !in tiposValidos }
-            .toMutableList()
+    private fun verificaRegiao(requestRegiao: String): RequestRegiao =
+        runCatching { RequestRegiao.valueOf(requestRegiao.uppercase()) }
+            .getOrElse { throw RequestParamRegiaoException() }
 
-        if (tiposInvalidos.isNotEmpty())
-            throw RequestParamTipoException(tiposInvalidos)
-
-        return tipos
-            .map { RequestTipo.valueOf(it.uppercase()) }
-            .toMutableList()
-            .apply {
-                if (contains(RequestTipo.SINGLE))
-                    add(RequestTipo.EP)
-                else if (contains(RequestTipo.EP))
-                    add(RequestTipo.SINGLE)
-            }
-    }
-
-    private fun verificaRegiao(requestRegiao: String): RequestRegiao {
-        val tiposValidos = RequestRegiao.entries.map { it.name.uppercase() }
-        val regiao = requestRegiao.uppercase()
-
-        if(regiao !in tiposValidos)
-            throw RequestParamRegiaoException(requestRegiao)
-
-        return RequestRegiao.valueOf(regiao)
-
-    }
 
     fun buscaPorPodcast(nome: String, requestRegiao: String): ResultadoView {
         if (nome.isBlank())

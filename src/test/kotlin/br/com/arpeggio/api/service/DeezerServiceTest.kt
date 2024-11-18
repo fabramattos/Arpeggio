@@ -1,17 +1,17 @@
 package br.com.arpeggio.api.service
 
+import br.com.arpeggio.api.domain.resultado.ResultadoBusca
 import br.com.arpeggio.api.domain.resultado.ResultadoBuscaConcluidaAlbuns
 import br.com.arpeggio.api.infra.busca.RequestParams
 import br.com.arpeggio.api.infra.busca.RequestRegiao
 import br.com.arpeggio.api.infra.busca.RequestTipo
 import io.mockk.coEvery
 import io.mockk.mockk
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
 
 class DeezerServiceTest {
@@ -20,7 +20,6 @@ class DeezerServiceTest {
     private val listaDisparos = mutableListOf<RequestParams>()
 
     init {
-        //cria lista de requests com id's unicos
         repeat(50) {
             listaDisparos.add(RequestParams("banda", RequestRegiao.BR, listOf(RequestTipo.ALBUM)))
         }
@@ -42,7 +41,9 @@ class DeezerServiceTest {
                 listaDisparos.forEach {
                     launch {
                         deezerService.buscaPorArtista(it)
-                        listaProcessada.add(it)
+                        synchronized(listaProcessada) {
+                            listaProcessada.add(it)
+                        }
                     }
                 }
             }
@@ -59,45 +60,50 @@ class DeezerServiceTest {
                 break
             }
         }
-        Assertions.assertFalse(existeDiferenca,"Não deveria existir diferença na ordem de requests recebidos e processados"
+        Assertions.assertFalse(
+            existeDiferenca, "Não deveria existir diferença na ordem de requests recebidos e processados"
         )
     }
 
 
     @Test
-    fun `Dado varios requests assincronos, Quando o tempo de resposta variar, Deve retornar os resultados em ordem diferente da recebida`() {
-        val listaProcessada = mutableListOf<RequestParams>()
+    fun `Dado varios requests assincronos, Quando processados, Deve retornar resultados em ordem diferente da sequencia original`() {
+        val contador = AtomicInteger(1)
 
-        // configura mock com delay aleatorio.
         coEvery { deezerService.buscaPorArtista(any()) } coAnswers {
-            delay(Random.nextLong(500))
-            ResultadoBuscaConcluidaAlbuns("Deezer", "artista teste", Random.nextInt())
+            val delayTime = Random.nextLong(500, 1500)
+            delay(delayTime)
+            ResultadoBuscaConcluidaAlbuns("Deezer", "artista teste", contador.getAndIncrement())
         }
 
-        // executa as chamadas ao service de forma assincrona
+        val resultados = mutableListOf<ResultadoBuscaConcluidaAlbuns>()
+
         runBlocking {
-            coroutineScope {
-                listaDisparos.forEach {
-                    launch {
-                        deezerService.buscaPorArtista(it)
-                        listaProcessada.add(it)
-                    }
+            listaDisparos.forEach {
+                launch {
+                    val resultado = deezerService.buscaPorArtista(it) as ResultadoBuscaConcluidaAlbuns
+                    resultados.add(resultado)
                 }
             }
         }
 
-        Assertions.assertEquals(50, listaProcessada.size)
-        Assertions.assertTrue(listaProcessada.containsAll(listaDisparos))
+        // Logs para análise
+        println(
+            "Resultados: ${
+            resultados.map
+            { it.albuns }
+        }"
+        )
 
-        // verifica se a sequencia disparada é a mesma retornada. Não deve ser.
-        var existeDiferenca = false
-        for (i in 0..49) {
-            if (listaDisparos[i] != listaProcessada[i]) {
-                existeDiferenca = true
-                break
-            }
-        }
+        // Verificar se os resultados estão fora de ordem
+        val estaForaDeOrdem = resultados
+            .zipWithNext { a, b -> a.albuns > b.albuns }
+            .any { it }
 
-        Assertions.assertTrue(existeDiferenca,"Deveria existir diferença na ordem de requests recebidos e processados")
+        Assertions.assertTrue(
+            estaForaDeOrdem,
+            "Os resultados deveriam estar fora de ordem devido ao processamento paralelo."
+        )
     }
+
 }

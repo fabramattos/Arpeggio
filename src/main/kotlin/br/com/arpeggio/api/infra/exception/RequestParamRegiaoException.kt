@@ -5,4 +5,4 @@ import java.lang.RuntimeException
 
 private val regioes = RequestRegiao.entries.toList()
 
-class RequestParamRegiaoException(requestRegiao: String) : RuntimeException("Parametro 'regiao' com valor '$requestRegiao' inválido! Valores válidos: $regioes")
+class RequestParamRegiaoException : RuntimeException("Parametro 'regiao' com valor inválido! Valores válidos: $regioes")

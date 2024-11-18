@@ -36,7 +36,7 @@ class DeezerService(
             .bodyToMono<DeezerSearchArtistResponse>()
             .map { it.data }
             .awaitSingleOrNull()
-            ?.first()
+            ?.firstOrNull()
             ?: throw ArtistaNaoEncontradoException()
     }
 
@@ -54,7 +54,7 @@ class DeezerService(
             .bodyToMono<DeezerSearchPodcastResponse>()
             .map { it.data }
             .awaitSingleOrNull()
-            ?.first()
+            ?.firstOrNull()
             ?: throw PodcastNaoEncontradoException()
     }
 

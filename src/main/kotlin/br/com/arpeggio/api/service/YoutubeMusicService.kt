@@ -48,7 +48,7 @@ class YoutubeMusicService(
 
     @PostConstruct
     fun logaUrlDoChrome() {
-        println("Selenium: url do driver: http://${WEBDRIVER_HOST}:${WEBDRIVER_PORT}")
+        println("Selenium: url do driver: ${WEBDRIVER_HOST}:${WEBDRIVER_PORT}")
     }
 
     override suspend fun buscaPorArtista(requestParams: RequestParams): ResultadoBusca {
@@ -77,7 +77,7 @@ class YoutubeMusicService(
 
         val navegacao = runCatching {
             // para executar via docker e em ambiente de prod
-            driver = RemoteWebDriver(URL("http://${WEBDRIVER_HOST}:${WEBDRIVER_PORT}"), options)
+            driver = RemoteWebDriver(URL("${WEBDRIVER_HOST}:${WEBDRIVER_PORT}"), options)
 
             // para executar localmente sem docker em ambiente dev
 //            driver = EdgeDriver()
