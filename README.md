@@ -1,15 +1,18 @@
+*Mude o idioma:* [![pt-br](https://img.shields.io/badge/lang-pt--br-green.svg)](https://github.com/fabramattos/Arpeggio)
 # 🎧 Arpeggio 🎧
-**Arpeggio** é um aplicativo de comparação de streamings de áudio.<br>
-Com ele, o usuário pode:<br>
-- ☑️ consultar o número de álbuns de um artista ou banda, presentes nos streamings.<br>
-- ☑️ consultar o número de episódios de um Podcast, presentes nos streamings.<br>
-- ❎ terminar uma partida de Uno sem brigar com demais jogadores.<br>
+**Arpeggio** is an audio streaming comparison app.<br>
+With it, users can:<br>
 
-No momento, conectamos com: Spotify, Deezer, Tidal e Youtube Music.<br>
-🚨 **_Este repositório é relativo ao Backend utilizado pelos versões web e android_** 🚨
+☑️ Check the number of albums available on streaming services by searching for an artist's or band's name<br>
+☑️ check the number of episodes of a podcast available on streaming services.<br>
+❎ finish a game of Uno without arguing with other players.<br>
 
-## 🚧 Status do projeto 🚧
-![Badge em Desenvolvimento](http://img.shields.io/static/v1?label=STATUS&message=EM%20DESENVOLVIMENTO&color=GREEN&style=for-the-badge)
+Currently, we integrate with: Spotify, Deezer, Tidal, and YouTube Music.<br>
+🚨 **_This repository is related to the Backend used by the web and android versions_** 🚨
+
+
+## 🚧 Project Status 🚧
+![Badge em Desenvolvimento](http://img.shields.io/static/v1?label=STATUS&message=DEVELOPMENT&color=GREEN&style=for-the-badge)
 
 ## 🚀 Stack 🚀
  - Kotlin 1.9
@@ -20,20 +23,20 @@ No momento, conectamos com: Spotify, Deezer, Tidal e Youtube Music.<br>
  - Selenium Web Driver
  - OpenAPI
 
-## Como utilizar
-No momento, é possível testar as funcionalidades pela documentação interativa do Swagger-UI [**neste link**](https://arpeggio.up.railway.app/doc/swagger-ui/index.html)
+## How to Use
+Currently, you can test the functionalities through the interactive Swagger-UI documentation [**at this link**](https://arpeggio.up.railway.app/doc/swagger-ui/index.html)
 
-## 💡 Futuras implementações 💡
-### Novos Streamings:
+## 💡 Future Integrations 💡
+### New Streaming Services:
 - Amazon Music:
-  - API apenas para devs parceiros
+  - API only for Amazon partner developers at the moment.
 - Apple Music:
-  - Apple sendo apple. Necessária assinatura para ter acesso à API. Inviável no momento 💸
+  - Apple being Apple. Subscription required to access their API. Not feasible at the moment 💸
 
-### Novas funcionalidades
-- [ ] cadastro de usuários
+### New Features
+- [ ] user registration
 
-## 💻 Desenvolvedores 💻
+## 💻 Developers 💻
 
 <table>
   <tr>
