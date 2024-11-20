@@ -52,6 +52,7 @@ class YoutubeMusicService(
     }
 
     override suspend fun buscaPorArtista(requestParams: RequestParams): ResultadoBusca {
+        /*
         val busca = runCatching { executaSelenium(requestParams) }
         val artista = busca.getOrNull()
 
@@ -59,6 +60,10 @@ class YoutubeMusicService(
             ResultadoBuscaErros(NOME_STREAMING, busca.exceptionOrNull()!!.localizedMessage)
         else
             ResultadoBuscaConcluidaAlbuns(NOME_STREAMING, artista.name, artista.qty)
+
+         */
+
+        return ResultadoBuscaErros(NOME_STREAMING, "Serviço temporariamente desabilitado")
     }
 
     override suspend fun buscaPorPodcast(requestParams: RequestParams): ResultadoBusca {

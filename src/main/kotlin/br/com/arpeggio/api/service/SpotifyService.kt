@@ -6,6 +6,7 @@ import br.com.arpeggio.api.domain.resultado.ResultadoBuscaConcluidaPodcast
 import br.com.arpeggio.api.domain.resultado.ResultadoBuscaErros
 import br.com.arpeggio.api.domain.streamings.spotify.*
 import br.com.arpeggio.api.infra.busca.RequestParams
+import br.com.arpeggio.api.infra.busca.RequestTipo
 import br.com.arpeggio.api.infra.exception.*
 import br.com.arpeggio.api.infra.log.Logs
 import kotlinx.coroutines.CoroutineScope
@@ -84,6 +85,7 @@ class SpotifyService(
         val uri = UriComponentsBuilder
             .fromUriString("https://api.spotify.com/v1/artists/${idArtista}/albums")
             .queryParam("include_groups", retornaTipos(requestParams))
+            .queryParam("market", requestParams.regiao.valor)
             .queryParam("limit", 1)
             .buildAndExpand()
             .toUri()
@@ -150,11 +152,13 @@ class SpotifyService(
 
     private fun retornaTipos(requestParams: RequestParams): String {
         var texto = ""
+
         requestParams.tipos
-            .filterNot { it == br.com.arpeggio.api.infra.busca.RequestTipo.EP } // -> Spotify não filtra EP! Single = Single + EP
+            .filterNot { it == RequestTipo.EP } // -> Spotify não filtra EP! Single = Single + EP
             .forEach { texto = texto.plus(it.name + ",") }
+
         texto = texto.removeSuffix(",")
-        return texto
+        return texto.lowercase()
     }
 
 }
