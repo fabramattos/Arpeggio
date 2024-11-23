@@ -24,7 +24,7 @@ Currently, we integrate with: Spotify, Deezer, Tidal, and YouTube Music.<br>
  - OpenAPI
 
 ## How to Use
-Currently, you can test the functionalities through the interactive Swagger-UI documentation [**at this link**](https://arpeggio.up.railway.app/doc/swagger-ui/index.html)
+Currently, you can test the functionalities through the interactive Swagger-UI documentation [**at this link**](https://arpeggio-api-374326808505.southamerica-east1.run.app/doc/swagger-ui/index.html)
 
 ## 💡 Future Integrations 💡
 ### New Streaming Services:
