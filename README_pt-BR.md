@@ -1,4 +1,4 @@
-*Change language:* [![en](https://img.shields.io/badge/lang-en-red.svg)](https://github.com/fabramattos)<br>
+*Change language:* [![en](https://img.shields.io/badge/lang-en-red.svg)](https://github.com/fabramattos/Arpeggio)<br>
 # 🎧 Arpeggio 🎧
 **Arpeggio** é um aplicativo de comparação de streamings de áudio.<br>
 Com ele, o usuário pode:<br>
