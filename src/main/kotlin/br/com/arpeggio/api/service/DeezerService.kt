@@ -8,8 +8,10 @@ import br.com.arpeggio.api.dto.response.ExternalErrorResponse
 import br.com.arpeggio.api.dto.externalApi.deezer.*
 import br.com.arpeggio.api.dto.request.RequestParams
 import br.com.arpeggio.api.infra.exception.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
+import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
@@ -41,13 +43,13 @@ class DeezerService(
             ?: throw ArtistaNaoEncontradoException()
     }
 
-    private suspend fun buscaPodcasts(nome: String): DeezerApiPodcastData {
+    private suspend fun buscaPodcasts(nome: String): DeezerApiPodcastData = withContext(Dispatchers.IO) {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.deezer.com/search/podcast")
             .queryParam("q", nome)
             .buildAndExpand()
             .toUri()
-//TODO remover debug
+        //TODO remover debug
         val json: String = webClient
             .get()
             .uri(uri)
@@ -60,7 +62,7 @@ class DeezerService(
         Logs.debug("BUSCA PODCASTS: JSON: $json");
 
 
-        return webClient
+        return@withContext webClient
             .get()
             .uri(uri)
             .retrieve()
