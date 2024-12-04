@@ -1,3 +1,7 @@
+logging:
+  level:
+    root: INFO
+
 springdoc:
   swagger-ui:
     path: /doc/swagger-ui

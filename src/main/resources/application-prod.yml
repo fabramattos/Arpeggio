@@ -1,6 +1,8 @@
-# configurações para executar no RAILWAY.APP
+logging:
+  level:
+    root: ERROR
 
 server:
   port: ${PORT}
   address: 0.0.0.0
-  forward-headers-strategy: framework
+#  forward-headers-strategy: framework
