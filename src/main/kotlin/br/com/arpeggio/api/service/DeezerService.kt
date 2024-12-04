@@ -56,7 +56,8 @@ class DeezerService(
             .awaitSingleOrNull()
             ?:"XABLAU"
 
-        Logs.debug("BUSCA PODCASTS: $json");
+        Logs.debug("BUSCA PODCASTS: URL: $uri")
+        Logs.debug("BUSCA PODCASTS: JSON: $json");
 
 
         return webClient
