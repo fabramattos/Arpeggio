@@ -8,6 +8,8 @@ import br.com.arpeggio.api.dto.response.ExternalErrorResponse
 import br.com.arpeggio.api.dto.externalApi.deezer.*
 import br.com.arpeggio.api.dto.request.RequestParams
 import br.com.arpeggio.api.infra.exception.*
+import com.google.common.net.HttpHeaders
+import com.google.common.net.MediaType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
@@ -21,7 +23,10 @@ import org.springframework.web.util.UriComponentsBuilder
 @Service
 class DeezerService(
     override val NOME_STREAMING: String = "Deezer",
-    private val webClient: WebClient,
+    private val webClient: WebClient = WebClient.builder()
+        .defaultHeader(HttpHeaders.ACCEPT, "application/json")
+        .build()
+    ,
 ) : CommandStreamingAudio {
 
 
@@ -43,7 +48,7 @@ class DeezerService(
             ?: throw ArtistaNaoEncontradoException()
     }
 
-    private suspend fun buscaPodcasts(nome: String): DeezerApiPodcastData = withContext(Dispatchers.IO) {
+    private suspend fun buscaPodcasts(nome: String): DeezerApiPodcastData {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.deezer.com/search/podcast")
             .queryParam("q", nome)
@@ -62,7 +67,7 @@ class DeezerService(
         Logs.debug("BUSCA PODCASTS: JSON: $json");
 
 
-        return@withContext webClient
+        return webClient
             .get()
             .uri(uri)
             .retrieve()
