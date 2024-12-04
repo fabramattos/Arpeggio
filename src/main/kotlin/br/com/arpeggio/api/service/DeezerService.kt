@@ -8,6 +8,7 @@ import br.com.arpeggio.api.dto.response.ExternalErrorResponse
 import br.com.arpeggio.api.dto.externalApi.deezer.*
 import br.com.arpeggio.api.dto.request.RequestParams
 import br.com.arpeggio.api.infra.exception.*
+import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
@@ -47,12 +48,13 @@ class DeezerService(
             .buildAndExpand()
             .toUri()
 //TODO remover debug
-        val json: String? = webClient
+        val json: String = webClient
             .get()
             .uri(uri)
             .retrieve()
             .bodyToMono<String>()
             .awaitSingleOrNull()
+            ?:"XABLAU"
 
         Logs.debug("BUSCA PODCASTS: $json");
 
@@ -96,12 +98,13 @@ class DeezerService(
             .toUri()
 
         //TODO remover debug
-        val json: String? = webClient
+        val json: String = webClient
             .get()
             .uri(uri)
             .retrieve()
             .bodyToMono<String>()
             .awaitSingleOrNull()
+            ?:"XABLAU2"
 
         Logs.debug("BUSCA EPISODIOS: $json");
 
