@@ -1,12 +1,12 @@
 package br.com.arpeggio.api.service
 
-import br.com.arpeggio.api.domain.resultado.ResultadoBusca
-import br.com.arpeggio.api.domain.resultado.ResultadoBuscaConcluidaAlbuns
-import br.com.arpeggio.api.domain.resultado.ResultadoBuscaConcluidaPodcast
-import br.com.arpeggio.api.domain.resultado.ResultadoBuscaErros
-import br.com.arpeggio.api.domain.streamings.spotify.*
-import br.com.arpeggio.api.infra.busca.RequestParams
-import br.com.arpeggio.api.infra.busca.RequestTipo
+import br.com.arpeggio.api.dto.response.SearchResults
+import br.com.arpeggio.api.dto.response.AlbumsResponse
+import br.com.arpeggio.api.dto.response.PodcastsResponse
+import br.com.arpeggio.api.dto.response.ExternalErrorResponse
+import br.com.arpeggio.api.dto.externalApi.spotify.*
+import br.com.arpeggio.api.dto.request.RequestParams
+import br.com.arpeggio.api.dto.request.RequestTipo
 import br.com.arpeggio.api.infra.exception.*
 import br.com.arpeggio.api.infra.log.Logs
 import kotlinx.coroutines.CoroutineScope
@@ -37,7 +37,7 @@ class SpotifyService(
     }
 
 
-    private suspend fun buscaArtista(requestParams: RequestParams): SpotifyArtistData {
+    private suspend fun buscaArtista(requestParams: RequestParams): SpotifyApiArtistData {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.spotify.com/v1/search")
             .queryParam("q", requestParams.busca)
@@ -52,14 +52,14 @@ class SpotifyService(
             .uri(uri)
             .header("Authorization", authentication.headerValue)
             .retrieve()
-            .bodyToMono<SpotifySearchArtistsResponse>()
+            .bodyToMono<SpotifyApiArtistsResponse>()
             .map { it.artists.items }
             .awaitSingleOrNull()
             ?.first()
             ?: throw ArtistaNaoEncontradoException()
     }
 
-    private suspend fun buscaPodcasts(requestParams: RequestParams): SpotifyShowData {
+    private suspend fun buscaPodcasts(requestParams: RequestParams): SpotifyApiPodcastData {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.spotify.com/v1/search")
             .queryParam("q", requestParams.busca)
@@ -74,14 +74,14 @@ class SpotifyService(
             .uri(uri)
             .header("Authorization", authentication.headerValue)
             .retrieve()
-            .bodyToMono<SpotifySearchShowsResponse>()
+            .bodyToMono<SpotifyApiPodcastsResponse>()
             .map { it.shows.items }
             .awaitSingleOrNull()
             ?.first()
             ?: throw PodcastNaoEncontradoException()
     }
 
-    private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: String): SpotifyResponseAlbum {
+    private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: String): SpotifyApiAlbumsResponse {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.spotify.com/v1/artists/${idArtista}/albums")
             .queryParam("include_groups", retornaTipos(requestParams))
@@ -95,55 +95,55 @@ class SpotifyService(
             .uri(uri)
             .header("Authorization", authentication.headerValue)
             .retrieve()
-            .bodyToMono<SpotifyResponseAlbum>()
+            .bodyToMono<SpotifyApiAlbumsResponse>()
             .awaitSingleOrNull()
             ?: throw FalhaAoBuscarAlbunsDoArtista()
     }
 
-    override suspend fun buscaPorArtista(requestParams: RequestParams): ResultadoBusca {
+    override suspend fun buscaPorArtista(requestParams: RequestParams): SearchResults {
         var erros = 0
         while (erros < 3) {
             val resultado = runCatching {
                 val artista = buscaArtista(requestParams)
                 val totalDeAlbuns = buscaAlbunsDoArtista(requestParams, artista.id).total
-                return ResultadoBuscaConcluidaAlbuns(NOME_STREAMING, artista.name, totalDeAlbuns)
+                return AlbumsResponse(NOME_STREAMING, artista.name, totalDeAlbuns)
             }
 
             resultado.onFailure {
                 erros++
-                Logs.exception(NOME_STREAMING, requestParams.id.toString(), it.localizedMessage, erros)
+                Logs.error(NOME_STREAMING, requestParams.id.toString(), it.localizedMessage, erros)
                 if (it is ArtistaNaoEncontradoException)
-                    return ResultadoBuscaErros(NOME_STREAMING, it.localizedMessage)
+                    return ExternalErrorResponse(NOME_STREAMING, it.localizedMessage)
 
                 if (it.localizedMessage.contains("401"))
                     authentication.atualizaToken(webClient)
             }
         }
-        return ResultadoBuscaErros(
+        return ExternalErrorResponse(
             NOME_STREAMING,
             FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).localizedMessage
         )
     }
 
-    override suspend fun buscaPorPodcast(requestParams: RequestParams): ResultadoBusca {
+    override suspend fun buscaPorPodcast(requestParams: RequestParams): SearchResults {
         var erros = 0
         while (erros < 3) {
             val resultado = runCatching {
                 val podcast = buscaPodcasts(requestParams)
-                return ResultadoBuscaConcluidaPodcast(NOME_STREAMING, podcast.name, podcast.total_episodes)
+                return PodcastsResponse(NOME_STREAMING, podcast.name, podcast.total_episodes)
             }
 
             resultado.onFailure {
                 erros++
-                Logs.exception(NOME_STREAMING, requestParams.id.toString(), it.localizedMessage, erros)
+                Logs.error(NOME_STREAMING, requestParams.id.toString(), it.localizedMessage, erros)
                 if (it is PodcastNaoEncontradoException)
-                    return ResultadoBuscaErros(NOME_STREAMING, it.localizedMessage)
+                    return ExternalErrorResponse(NOME_STREAMING, it.localizedMessage)
 
                 if (it.localizedMessage.contains("401"))
                     authentication.atualizaToken(webClient)
             }
         }
-        return ResultadoBuscaErros(
+        return ExternalErrorResponse(
             NOME_STREAMING,
             FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).localizedMessage
         )

@@ -1,6 +1,6 @@
 package br.com.arpeggio.api.controller
 
-import br.com.arpeggio.api.domain.resultado.ResultadoView
+import br.com.arpeggio.api.dto.response.ResultsResponse
 import br.com.arpeggio.api.service.BuscaService
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Schema
@@ -20,24 +20,16 @@ class BuscaController(val service: BuscaService) {
         @Parameter(
             name = "regiao",
             description = "País para realizar a consulta.\n\nValores aceitos: \"BR\", \"US\"",
-            schema = Schema(
-                type = "string",
-                example = "BR",
-                defaultValue = "BR"
-            )
+            schema = Schema(type = "string", example = "BR", defaultValue = "BR")
         )
         @RequestParam(required = true) regiao: String,
         @Parameter(
             name = "tipo",
             description = "Conteúdo desejado de busca, separado por virgulas.\n\nValores aceitos: \"ALBUM\", \"SINGLE\"",
-            schema = Schema(
-                type = "string",
-                example = "ALBUM,SINGLE",
-                defaultValue = "ALBUM"
-            )
+            schema = Schema(type = "string", example = "ALBUM,SINGLE", defaultValue = "ALBUM")
         )
         @RequestParam(required = true) tipo: String,
-    ): ResponseEntity<ResultadoView> =
+    ): ResponseEntity<ResultsResponse> =
 
         ResponseEntity.ok(service.buscaPorArtista(nome, regiao, tipo))
 
@@ -48,14 +40,10 @@ class BuscaController(val service: BuscaService) {
         @Parameter(
             name = "regiao",
             description = "País para realizar a consulta.\n\nValores aceitos: \"BR\", \"US\"",
-            schema = Schema(
-                type = "string",
-                example = "BR",
-                defaultValue = "BR"
-            )
+            schema = Schema(type = "string", example = "BR", defaultValue = "BR")
         )
         @RequestParam(required = true) regiao: String,
-    ): ResponseEntity<ResultadoView> =
+    ): ResponseEntity<ResultsResponse> =
 
         ResponseEntity.ok(service.buscaPorPodcast(nome, regiao))
 

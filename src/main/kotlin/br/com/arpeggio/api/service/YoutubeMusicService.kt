@@ -1,11 +1,10 @@
 package br.com.arpeggio.api.service
 
-import br.com.arpeggio.api.domain.resultado.ResultadoBusca
-import br.com.arpeggio.api.domain.resultado.ResultadoBuscaConcluidaAlbuns
-import br.com.arpeggio.api.domain.resultado.ResultadoBuscaErros
-import br.com.arpeggio.api.domain.streamings.youtube.YoutubeResult
-import br.com.arpeggio.api.infra.busca.RequestParams
-import br.com.arpeggio.api.infra.busca.RequestTipo
+import br.com.arpeggio.api.dto.response.SearchResults
+import br.com.arpeggio.api.dto.response.ExternalErrorResponse
+import br.com.arpeggio.api.dto.externalApi.youtube.YoutubeResult
+import br.com.arpeggio.api.dto.request.RequestParams
+import br.com.arpeggio.api.dto.request.RequestTipo
 import jakarta.annotation.PostConstruct
 import org.openqa.selenium.By
 import org.openqa.selenium.By.cssSelector
@@ -51,7 +50,7 @@ class YoutubeMusicService(
         println("Selenium: url do driver: ${WEBDRIVER_HOST}:${WEBDRIVER_PORT}")
     }
 
-    override suspend fun buscaPorArtista(requestParams: RequestParams): ResultadoBusca {
+    override suspend fun buscaPorArtista(requestParams: RequestParams): SearchResults {
         /*
         val busca = runCatching { executaSelenium(requestParams) }
         val artista = busca.getOrNull()
@@ -63,12 +62,12 @@ class YoutubeMusicService(
 
          */
 
-        return ResultadoBuscaErros(NOME_STREAMING, "Serviço temporariamente desabilitado")
+        return ExternalErrorResponse(NOME_STREAMING, "Serviço temporariamente desabilitado")
     }
 
-    override suspend fun buscaPorPodcast(requestParams: RequestParams): ResultadoBusca {
+    override suspend fun buscaPorPodcast(requestParams: RequestParams): SearchResults {
         //TODO("Not yet implemented")
-        return ResultadoBuscaErros(NOME_STREAMING, "busca por podcast ainda não implementada")
+        return ExternalErrorResponse(NOME_STREAMING, "busca por podcast ainda não implementada")
     }
 
     private fun executaSelenium(requestParams: RequestParams): YoutubeResult {

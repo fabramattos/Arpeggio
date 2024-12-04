@@ -2,7 +2,7 @@ package br.com.arpeggio.api.service
 
 import br.com.arpeggio.api.infra.exception.FalhaAoRecuperarTokenException
 import br.com.arpeggio.api.infra.log.Logs
-import br.com.arpeggio.api.domain.streamings.spotify.SpotifyResponseAuthetication
+import br.com.arpeggio.api.dto.externalApi.spotify.SpotifyApiAutheticationResponse
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
@@ -32,26 +32,26 @@ class SpotifyAuthentication(
             }
 
             chamadaApi.onSuccess {
-                Logs.autenticacaoConcluida("Spotify")
+                Logs.authenticated("Spotify")
                 return
             }
 
             chamadaApi.onFailure {
                 erros++
-                Logs.autenticacaoErro("Spotify", it.localizedMessage, erros)
+                Logs.authenticationError("Spotify", it.localizedMessage, erros)
                 Thread.sleep(500)
             }
         }
 
     }
 
-    private suspend fun autentica(webClient: WebClient): SpotifyResponseAuthetication =
+    private suspend fun autentica(webClient: WebClient): SpotifyApiAutheticationResponse =
         webClient.post()
             .uri("https://accounts.spotify.com/api/token")
             .contentType(MediaType.APPLICATION_FORM_URLENCODED)
             .bodyValue("grant_type=client_credentials&client_id=${SPOTIFY_API_ID}&client_secret=${SPOTIFY_API_SECRET}")
             .retrieve()
-            .bodyToMono<SpotifyResponseAuthetication>()
+            .bodyToMono<SpotifyApiAutheticationResponse>()
             .awaitSingleOrNull()
             ?: throw FalhaAoRecuperarTokenException()
 }

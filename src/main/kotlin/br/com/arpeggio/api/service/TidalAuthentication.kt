@@ -34,13 +34,13 @@ class TidalAuthentication(
             }
 
             chamadaApi.onSuccess {
-                Logs.autenticacaoConcluida("Tidal")
+                Logs.authenticated("Tidal")
                 return
             }
 
             chamadaApi.onFailure {
                 erros++
-                Logs.autenticacaoErro("Tidal", it.localizedMessage, erros)
+                Logs.authenticationError("Tidal", it.localizedMessage, erros)
                 Thread.sleep(500)
             }
         }

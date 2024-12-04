@@ -1,10 +1,10 @@
 package br.com.arpeggio.api.service
 
-import br.com.arpeggio.api.domain.resultado.ResultadoBusca
-import br.com.arpeggio.api.domain.resultado.ResultadoView
-import br.com.arpeggio.api.infra.busca.RequestParams
-import br.com.arpeggio.api.infra.busca.RequestRegiao
-import br.com.arpeggio.api.infra.busca.RequestTipo
+import br.com.arpeggio.api.dto.response.SearchResults
+import br.com.arpeggio.api.dto.response.ResultsResponse
+import br.com.arpeggio.api.dto.request.RequestParams
+import br.com.arpeggio.api.dto.request.RequestRegiao
+import br.com.arpeggio.api.dto.request.RequestTipo
 import br.com.arpeggio.api.infra.exception.RequestParamNomeException
 import br.com.arpeggio.api.infra.exception.RequestParamRegiaoException
 import br.com.arpeggio.api.infra.exception.RequestParamTipoException
@@ -28,7 +28,7 @@ class BuscaService(
     ),
 ) {
 
-    fun buscaPorArtista(nome: String, requestRegiao: String, requestTipo: String): ResultadoView {
+    fun buscaPorArtista(nome: String, requestRegiao: String, requestTipo: String): ResultsResponse {
         if (nome.isBlank())
             throw RequestParamNomeException()
 
@@ -37,9 +37,9 @@ class BuscaService(
         val regiao = verificaRegiao(requestRegiao)
         val requestParams = RequestParams(nomeBusca, regiao, tipos)
 
-        val listaResultados = mutableListOf<ResultadoBusca>()
+        val listaResultados = mutableListOf<SearchResults>()
         runBlocking {
-            Logs.consultaIniciada(nomeBusca, requestParams.id.toString())
+            Logs.searchStarted(nomeBusca, requestParams.id.toString())
             commandStreamingAudio.forEach { streaming ->
                 launch {
                     val resultado = streaming.buscaPorArtista(requestParams)
@@ -47,9 +47,9 @@ class BuscaService(
                 }
             }
         }
-        Logs.consultaFinalizada(nomeBusca, requestParams.id.toString())
+        Logs.searchCompleted(nomeBusca, requestParams.id.toString())
 
-        return ResultadoView(nomeBusca, listaResultados)
+        return ResultsResponse(nomeBusca, listaResultados)
     }
 
     private fun montaListaDeTipos(requestTipo: String): List<RequestTipo> =
@@ -73,7 +73,7 @@ class BuscaService(
             .getOrElse { throw RequestParamRegiaoException() }
 
 
-    fun buscaPorPodcast(nome: String, requestRegiao: String): ResultadoView {
+    fun buscaPorPodcast(nome: String, requestRegiao: String): ResultsResponse {
         if (nome.isBlank())
             throw RequestParamNomeException()
 
@@ -81,9 +81,9 @@ class BuscaService(
         val regiao = verificaRegiao(requestRegiao)
         val requestParams = RequestParams(nomeBusca, regiao, emptyList())
 
-        val listaResultados = mutableListOf<ResultadoBusca>()
+        val listaResultados = mutableListOf<SearchResults>()
         runBlocking {
-            Logs.consultaIniciada(nomeBusca, requestParams.id.toString())
+            Logs.searchStarted(nomeBusca, requestParams.id.toString())
             commandStreamingAudio.forEach { streaming ->
                 launch {
                     val resultado = streaming.buscaPorPodcast(requestParams)
@@ -91,8 +91,8 @@ class BuscaService(
                 }
             }
         }
-        Logs.consultaFinalizada(nomeBusca, requestParams.id.toString())
+        Logs.searchCompleted(nomeBusca, requestParams.id.toString())
 
-        return ResultadoView(nomeBusca, listaResultados)
+        return ResultsResponse(nomeBusca, listaResultados)
     }
 }

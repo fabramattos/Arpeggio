@@ -1,12 +1,12 @@
 package br.com.arpeggio.api.service
 
 import br.com.arpeggio.api.infra.log.Logs
-import br.com.arpeggio.api.domain.resultado.ResultadoBusca
-import br.com.arpeggio.api.domain.resultado.ResultadoBuscaConcluidaAlbuns
-import br.com.arpeggio.api.domain.resultado.ResultadoBuscaConcluidaPodcast
-import br.com.arpeggio.api.domain.resultado.ResultadoBuscaErros
-import br.com.arpeggio.api.domain.streamings.deezer.*
-import br.com.arpeggio.api.infra.busca.RequestParams
+import br.com.arpeggio.api.dto.response.SearchResults
+import br.com.arpeggio.api.dto.response.AlbumsResponse
+import br.com.arpeggio.api.dto.response.PodcastsResponse
+import br.com.arpeggio.api.dto.response.ExternalErrorResponse
+import br.com.arpeggio.api.dto.externalApi.deezer.*
+import br.com.arpeggio.api.dto.request.RequestParams
 import br.com.arpeggio.api.infra.exception.*
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.stereotype.Service
@@ -22,7 +22,7 @@ class DeezerService(
 ) : CommandStreamingAudio {
 
 
-    private suspend fun buscaArtista(nome: String): DeezerArtistData {
+    private suspend fun buscaArtista(nome: String): DeezerApiArtistData {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.deezer.com/search/artist")
             .queryParam("q", nome)
@@ -33,14 +33,14 @@ class DeezerService(
             .get()
             .uri(uri)
             .retrieve()
-            .bodyToMono<DeezerSearchArtistResponse>()
+            .bodyToMono<DeezerApiArtistsResponse>()
             .map { it.data }
             .awaitSingleOrNull()
             ?.firstOrNull()
             ?: throw ArtistaNaoEncontradoException()
     }
 
-    private suspend fun buscaPodcasts(nome: String): DeezerPodcastData {
+    private suspend fun buscaPodcasts(nome: String): DeezerApiPodcastData {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.deezer.com/search/podcast")
             .queryParam("q", nome)
@@ -51,7 +51,7 @@ class DeezerService(
             .get()
             .uri(uri)
             .retrieve()
-            .bodyToMono<DeezerSearchPodcastResponse>()
+            .bodyToMono<DeezerApiPodcastsResponse>()
             .map { it.data }
             .awaitSingleOrNull()
             ?.firstOrNull()
@@ -59,7 +59,7 @@ class DeezerService(
     }
 
 
-    private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: Int): List<DeezerIdDetail> {
+    private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: Int): List<DeezerApiAlbumData> {
         val uri = UriComponentsBuilder
             .fromUriString("https://api.deezer.com/artist/$idArtista/albums")
             .queryParam("limit", 999)
@@ -70,7 +70,7 @@ class DeezerService(
             .get()
             .uri(uri)
             .retrieve()
-            .bodyToMono<DeezerSearchIdDetailResponse>()
+            .bodyToMono<DeezerApiAlbumsResponse>()
             .map { it.data }
             .awaitSingleOrNull()
             ?.filter { album ->
@@ -89,53 +89,53 @@ class DeezerService(
             .get()
             .uri(uri)
             .retrieve()
-            .bodyToMono<DeezerSearchIdDetailResponse>()
+            .bodyToMono<DeezerApiAlbumsResponse>()
             .map { it.total }
             .awaitSingleOrNull()
             ?: throw FalhaAoBuscarPodcastsException()
     }
 
 
-    override suspend fun buscaPorArtista(requestParams: RequestParams): ResultadoBusca {
+    override suspend fun buscaPorArtista(requestParams: RequestParams): SearchResults {
         var erros = 0
         while(erros < 3){
             val response = runCatching {
                 val artista = buscaArtista(requestParams.busca)
                 val totalDeAlbuns = buscaAlbunsDoArtista(requestParams, artista.id).size
-                return ResultadoBuscaConcluidaAlbuns(NOME_STREAMING, artista.name, totalDeAlbuns)
+                return AlbumsResponse(NOME_STREAMING, artista.name, totalDeAlbuns)
             }
 
             response.onFailure {
                 erros++
-                Logs.exception(NOME_STREAMING, requestParams.id.toString(), it.localizedMessage, erros)
+                Logs.error(NOME_STREAMING, requestParams.id.toString(), it.localizedMessage, erros)
                 if(it is ArtistaNaoEncontradoException)
-                    return ResultadoBuscaErros(NOME_STREAMING, it.localizedMessage)
+                    return ExternalErrorResponse(NOME_STREAMING, it.localizedMessage)
 
                 Thread.sleep(1000)
             }
         }
-        return ResultadoBuscaErros(NOME_STREAMING, FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).localizedMessage)
+        return ExternalErrorResponse(NOME_STREAMING, FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).localizedMessage)
     }
 
-    override suspend fun buscaPorPodcast(requestParams: RequestParams): ResultadoBusca {
+    override suspend fun buscaPorPodcast(requestParams: RequestParams): SearchResults {
         var erros = 0
         while(erros < 3){
             val response = runCatching {
                 val podcast = buscaPodcasts(requestParams.busca)
                 val totalDeEpisodios = buscaEpisodiosDoPodcast(podcast.id)
-                return ResultadoBuscaConcluidaPodcast(NOME_STREAMING, podcast.title, totalDeEpisodios)
+                return PodcastsResponse(NOME_STREAMING, podcast.title, totalDeEpisodios)
             }
 
             response.onFailure {
                 erros++
-                Logs.exception(NOME_STREAMING, requestParams.id.toString(), it.localizedMessage, erros)
+                Logs.error(NOME_STREAMING, requestParams.id.toString(), it.localizedMessage, erros)
                 if(it is PodcastNaoEncontradoException)
-                    return ResultadoBuscaErros(NOME_STREAMING, it.localizedMessage)
+                    return ExternalErrorResponse(NOME_STREAMING, it.localizedMessage)
 
                 Thread.sleep(1000)
             }
         }
-        return ResultadoBuscaErros(NOME_STREAMING, FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).localizedMessage)
+        return ExternalErrorResponse(NOME_STREAMING, FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).localizedMessage)
     }
 
 }

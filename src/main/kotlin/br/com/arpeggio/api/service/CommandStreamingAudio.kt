@@ -1,12 +1,12 @@
 package br.com.arpeggio.api.service
 
-import br.com.arpeggio.api.domain.resultado.ResultadoBusca
-import br.com.arpeggio.api.infra.busca.RequestParams
+import br.com.arpeggio.api.dto.response.SearchResults
+import br.com.arpeggio.api.dto.request.RequestParams
 
 interface CommandStreamingAudio {
 
     val NOME_STREAMING: String
-    suspend fun buscaPorArtista(requestParams: RequestParams): ResultadoBusca
+    suspend fun buscaPorArtista(requestParams: RequestParams): SearchResults
 
-    suspend fun buscaPorPodcast(requestParams: RequestParams): ResultadoBusca
+    suspend fun buscaPorPodcast(requestParams: RequestParams): SearchResults
 }

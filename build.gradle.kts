@@ -29,6 +29,10 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
     implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.3.0")
 
+    //logs
+    implementation("org.slf4j:slf4j-simple:2.0.9")
+
+
     //automação para executar o docker-compose ao rodar springboot app no desenvolvimento
     //developmentOnly("org.springframework.boot:spring-boot-docker-compose")
     testImplementation("org.springframework.boot:spring-boot-starter-test")

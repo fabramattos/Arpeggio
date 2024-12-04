@@ -1,11 +1,11 @@
 package br.com.arpeggio.api.service
 
-import br.com.arpeggio.api.domain.resultado.ResultadoBusca
-import br.com.arpeggio.api.domain.resultado.ResultadoBuscaConcluidaAlbuns
-import br.com.arpeggio.api.domain.resultado.ResultadoBuscaErros
-import br.com.arpeggio.api.domain.streamings.tidal.TidalResult
-import br.com.arpeggio.api.infra.busca.RequestParams
-import br.com.arpeggio.api.infra.busca.RequestTipo
+import br.com.arpeggio.api.dto.response.SearchResults
+import br.com.arpeggio.api.dto.response.AlbumsResponse
+import br.com.arpeggio.api.dto.response.ExternalErrorResponse
+import br.com.arpeggio.api.dto.externalApi.tidal.TidalResult
+import br.com.arpeggio.api.dto.request.RequestParams
+import br.com.arpeggio.api.dto.request.RequestTipo
 import br.com.arpeggio.api.infra.exception.*
 import br.com.arpeggio.api.infra.log.Logs
 import com.fasterxml.jackson.databind.JsonNode
@@ -42,24 +42,24 @@ class TidalService(
             }
     }
 
-    override suspend fun buscaPorArtista(requestParams: RequestParams): ResultadoBusca {
+    override suspend fun buscaPorArtista(requestParams: RequestParams): SearchResults {
         var erros = 0
         while (erros < 3) {
             val resultadoBusca = runCatching {
                 val artista = buscaArtista(requestParams)
                     .apply { qty = buscaAlbunsDoArtista(requestParams, id)}
 
-                return ResultadoBuscaConcluidaAlbuns(NOME_STREAMING, artista.name, artista.qty)
+                return AlbumsResponse(NOME_STREAMING, artista.name, artista.qty)
             }
 
             resultadoBusca.onFailure {
                 erros++
-                Logs.exception(NOME_STREAMING, requestParams.id.toString(), it.localizedMessage, erros)
+                Logs.error(NOME_STREAMING, requestParams.id.toString(), it.localizedMessage, erros)
                 when (it) {
                     is ArtistaNaoEncontradoException,
                     is FalhaInformacoesImprecisasDireitosAutoraisException,
                     ->
-                        return ResultadoBuscaErros(NOME_STREAMING, it.localizedMessage)
+                        return ExternalErrorResponse(NOME_STREAMING, it.localizedMessage)
 
                     else -> {
                         if (it.localizedMessage.contains("401"))
@@ -68,13 +68,13 @@ class TidalService(
                 }
             }
         }
-        return ResultadoBuscaErros(
+        return ExternalErrorResponse(
             NOME_STREAMING, FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).localizedMessage
         )
     }
 
-    override suspend fun buscaPorPodcast(requestParams: RequestParams): ResultadoBusca {
-        return ResultadoBuscaErros(NOME_STREAMING, "busca por podcast ainda não implementada")
+    override suspend fun buscaPorPodcast(requestParams: RequestParams): SearchResults {
+        return ExternalErrorResponse(NOME_STREAMING, "busca por podcast ainda não implementada")
         //TODO(Tidal não possui catálogo de podcast)
     }
 

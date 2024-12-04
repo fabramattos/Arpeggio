@@ -1,6 +1,6 @@
 package br.com.arpeggio.api.infra.exception
 
-import br.com.arpeggio.api.infra.busca.RequestRegiao
+import br.com.arpeggio.api.dto.request.RequestRegiao
 import java.lang.RuntimeException
 
 private val regioes = RequestRegiao.entries.toList()
