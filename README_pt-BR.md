@@ -1,4 +1,4 @@
-*Change language:* [![en](https://img.shields.io/badge/lang-en-red.svg)](https://github.com/fabramattos)<br>
+*Change language:* [![en](https://img.shields.io/badge/lang-en-red.svg)](https://github.com/fabramattos/Arpeggio)<br>
 # 🎧 Arpeggio 🎧
 **Arpeggio** é um aplicativo de comparação de streamings de áudio.<br>
 Com ele, o usuário pode:<br>
@@ -22,7 +22,7 @@ No momento, conectamos com: Spotify, Deezer, Tidal e Youtube Music.<br>
  - OpenAPI
 
 ## Como utilizar
-No momento, é possível testar as funcionalidades pela documentação interativa do Swagger-UI [**neste link**](https://arpeggio.up.railway.app/doc/swagger-ui/index.html)
+No momento, é possível testar as funcionalidades pela documentação interativa do Swagger-UI [**neste link**](https://arpeggio-api-374326808505.southamerica-east1.run.app/doc/swagger-ui/index.html)
 
 ## 💡 Futuras implementações 💡
 ### Novos Streamings:
