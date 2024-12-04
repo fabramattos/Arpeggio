@@ -5,4 +5,4 @@ logging:
 server:
   port: ${PORT}
   address: 0.0.0.0
-#  forward-headers-strategy: framework
+  forward-headers-strategy: framework
