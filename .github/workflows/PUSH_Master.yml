@@ -22,10 +22,13 @@ jobs:
           distribution: 'temurin'
 
       - name: Set up Gradle
-        uses: gradle/gradle-build-action@v3
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Concede permissoes
         run: chmod +x ./gradlew
+
+      - name: Gradle Clean
+        run: ./gradlew clean
 
       - name: Gradle Build
         run: ./gradlew build
