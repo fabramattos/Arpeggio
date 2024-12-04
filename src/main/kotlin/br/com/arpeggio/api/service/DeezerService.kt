@@ -46,6 +46,16 @@ class DeezerService(
             .queryParam("q", nome)
             .buildAndExpand()
             .toUri()
+//TODO remover debug
+        val json: String? = webClient
+            .get()
+            .uri(uri)
+            .retrieve()
+            .bodyToMono<String>()
+            .awaitSingleOrNull()
+
+        Logs.debug("JSON Response: $json");
+
 
         return webClient
             .get()

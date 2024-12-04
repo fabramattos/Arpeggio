@@ -26,5 +26,9 @@ class Logs {
         fun authenticated(nomeStreaming: String) {
             logger.info("Autenticação realizada: $nomeStreaming")
         }
+
+        fun debug(message: String) {
+            logger.error("DEBUG MESSAGE: $message")
+        }
     }
 }
