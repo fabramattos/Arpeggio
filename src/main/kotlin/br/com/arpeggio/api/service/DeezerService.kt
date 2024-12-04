@@ -1,32 +1,29 @@
 package br.com.arpeggio.api.service
 
-import br.com.arpeggio.api.infra.log.Logs
-import br.com.arpeggio.api.dto.response.SearchResults
-import br.com.arpeggio.api.dto.response.AlbumsResponse
-import br.com.arpeggio.api.dto.response.PodcastsResponse
-import br.com.arpeggio.api.dto.response.ExternalErrorResponse
 import br.com.arpeggio.api.dto.externalApi.deezer.*
 import br.com.arpeggio.api.dto.request.RequestParams
+import br.com.arpeggio.api.dto.response.AlbumsResponse
+import br.com.arpeggio.api.dto.response.ExternalErrorResponse
+import br.com.arpeggio.api.dto.response.PodcastsResponse
+import br.com.arpeggio.api.dto.response.SearchResults
 import br.com.arpeggio.api.infra.exception.*
+import br.com.arpeggio.api.infra.log.Logs
 import com.google.common.net.HttpHeaders
-import com.google.common.net.MediaType
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
-import kotlinx.coroutines.withContext
+import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
 import org.springframework.web.util.UriComponentsBuilder
+import kotlin.coroutines.coroutineContext
 
 
 @Service
 class DeezerService(
     override val NOME_STREAMING: String = "Deezer",
     private val webClient: WebClient = WebClient.builder()
-        .defaultHeader(HttpHeaders.ACCEPT, "application/json")
-        .build()
-    ,
+        .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+        .build(),
 ) : CommandStreamingAudio {
 
 
