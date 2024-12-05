@@ -1,6 +1,6 @@
 logging:
   level:
-    root: ERROR
+    root: DEBUG
 
 server:
   port: ${PORT}

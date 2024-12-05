@@ -20,11 +20,11 @@ repositories {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0-RC2")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.8.0-RC2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.9.0")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.springframework.boot:spring-boot-starter-web:3.4.0")
+    implementation("org.springframework.boot:spring-boot-starter-webflux:3.4.0")
     implementation("org.seleniumhq.selenium:selenium-java:4.16.1")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
     implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.3.0")
@@ -35,7 +35,7 @@ dependencies {
     //developmentOnly("org.springframework.boot:spring-boot-docker-compose")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.10.0")
-    testImplementation("io.mockk:mockk:1.13.9")
+    testImplementation("io.mockk:mock:1.13.9")
 }
 
 tasks.withType<KotlinCompile> {

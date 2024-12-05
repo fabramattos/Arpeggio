@@ -12,20 +12,20 @@ import com.google.common.net.HttpHeaders
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
+import org.springframework.web.reactive.function.client.ExchangeFilterFunction
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
 import org.springframework.web.util.UriComponentsBuilder
+import reactor.core.publisher.Mono
 import kotlin.coroutines.coroutineContext
 
 
 @Service
 class DeezerService(
     override val NOME_STREAMING: String = "Deezer",
-    private val webClient: WebClient = WebClient.builder()
-        .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
-        .build(),
 ) : CommandStreamingAudio {
 
+    val webClient = createWebClient()
 
     private suspend fun buscaArtista(nome: String): DeezerApiArtistData {
         val uri = UriComponentsBuilder
@@ -74,6 +74,35 @@ class DeezerService(
             ?.firstOrNull()
             ?: throw PodcastNaoEncontradoException()
     }
+
+    companion object {
+        fun createWebClient(): WebClient {
+            return WebClient.builder()
+                .baseUrl("https://api.deezer.com")
+                .filter(logRequest()) // Adiciona log da requisição
+                .filter(logResponse()) // Adiciona log da resposta
+                .build()
+        }
+
+        private fun logRequest(): ExchangeFilterFunction {
+            return ExchangeFilterFunction.ofRequestProcessor { request ->
+                Logs.debug("REQUEST: ${request.method()} ${request.url()}")
+                Logs.debug("Headers: ${request.headers()}")
+                Mono.just(request)
+            }
+        }
+
+        private fun logResponse(): ExchangeFilterFunction {
+            return ExchangeFilterFunction.ofResponseProcessor { response ->
+                Logs.debug("RESPONSE: ${response.statusCode()}")
+                response.bodyToMono(String::class.java).flatMap {
+                    Logs.debug("Body: $it")
+                    Mono.just(response)
+                }.onErrorResume { Mono.just(response) }
+            }
+        }
+    }
+
 
 
     private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: Int): List<DeezerApiAlbumData> {
