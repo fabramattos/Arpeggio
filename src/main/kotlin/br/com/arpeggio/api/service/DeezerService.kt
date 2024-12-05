@@ -79,6 +79,8 @@ class DeezerService(
         fun createWebClient(): WebClient {
             return WebClient.builder()
                 .baseUrl("https://api.deezer.com")
+                .defaultHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
+                .defaultHeader("Accept", "application/json")
                 .filter(logRequest()) // Adiciona log da requisição
                 .filter(logResponse()) // Adiciona log da resposta
                 .build()
