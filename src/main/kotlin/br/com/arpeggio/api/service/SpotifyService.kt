@@ -111,7 +111,7 @@ class SpotifyService(
 
             resultado.onFailure {
                 erros++
-                Logs.error(NOME_STREAMING, requestParams.id.toString(), it.localizedMessage, erros)
+                Logs.warn(NOME_STREAMING, requestParams.id.toString(), it.localizedMessage, erros)
                 if (it is ArtistaNaoEncontradoException)
                     return ExternalErrorResponse(NOME_STREAMING, it.localizedMessage)
 
@@ -135,7 +135,7 @@ class SpotifyService(
 
             resultado.onFailure {
                 erros++
-                Logs.error(NOME_STREAMING, requestParams.id.toString(), it.localizedMessage, erros)
+                Logs.warn(NOME_STREAMING, requestParams.id.toString(), it.localizedMessage, erros)
                 if (it is PodcastNaoEncontradoException)
                     return ExternalErrorResponse(NOME_STREAMING, it.localizedMessage)
 

@@ -38,7 +38,7 @@ class SpotifyAuthentication(
 
             chamadaApi.onFailure {
                 erros++
-                Logs.authenticationError("Spotify", it.localizedMessage, erros)
+                Logs.authenticationWarn("Spotify", it.localizedMessage, erros)
                 Thread.sleep(500)
             }
         }

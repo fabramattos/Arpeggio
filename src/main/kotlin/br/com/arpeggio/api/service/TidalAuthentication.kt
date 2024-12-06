@@ -40,7 +40,7 @@ class TidalAuthentication(
 
             chamadaApi.onFailure {
                 erros++
-                Logs.authenticationError("Tidal", it.localizedMessage, erros)
+                Logs.authenticationWarn("Tidal", it.localizedMessage, erros)
                 Thread.sleep(500)
             }
         }

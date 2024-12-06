@@ -54,7 +54,7 @@ class TidalService(
 
             resultadoBusca.onFailure {
                 erros++
-                Logs.error(NOME_STREAMING, requestParams.id.toString(), it.localizedMessage, erros)
+                Logs.warn(NOME_STREAMING, requestParams.id.toString(), it.localizedMessage, erros)
                 when (it) {
                     is ArtistaNaoEncontradoException,
                     is FalhaInformacoesImprecisasDireitosAutoraisException,

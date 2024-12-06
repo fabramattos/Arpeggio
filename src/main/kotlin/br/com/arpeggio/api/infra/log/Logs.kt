@@ -12,23 +12,27 @@ class Logs {
         }
 
         fun searchStarted(nome: String, idRequest: String) {
-            logger.info("Pesquisando:   '$nome' | requestId: $idRequest")
+            logger.info("INFO: Pesquisando:   '$nome' | requestId: $idRequest")
         }
 
         fun searchCompleted(nome: String, idRequest: String) {
-            logger.info("Finalizado:    '$nome' | requestId: $idRequest")
+            logger.info("INFO: Finalizado:    '$nome' | requestId: $idRequest")
         }
 
-        fun authenticationError(nomeStreaming: String, msg: String, erros: Int) {
-            logger.warn("ERRO AUTENTICAÇÃO: $nomeStreaming | Tentativa: $erros | msg: $msg")
+        fun authenticationWarn(nomeStreaming: String, msg: String, erros: Int) {
+            logger.warn("WARN: AUTENTICAÇÃO: $nomeStreaming | Tentativa: $erros | msg: $msg")
         }
 
         fun authenticated(nomeStreaming: String) {
-            logger.info("Autenticação realizada: $nomeStreaming")
+            logger.info("INFO: Autenticação realizada: $nomeStreaming")
         }
 
         fun debug(message: String) {
-            logger.error("DEBUG MESSAGE: $message")
+            logger.debug("DEBUG: MESSAGE: $message")
+        }
+
+        fun warn(nomeStreaming: String, idRequest: String, msg: String, erros: Int) {
+            logger.warn("WARN: $nomeStreaming | Tentativa: $erros | msg: $msg | requestId: $idRequest")
         }
     }
 }
