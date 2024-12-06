@@ -23,7 +23,10 @@ import kotlin.coroutines.coroutineContext
 @Service
 class DeezerService(
     override val NOME_STREAMING: String = "Deezer",
-    val webClient: WebClient,
+    val webClient: WebClient = WebClient.builder()
+        .defaultHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
+        .defaultHeader("Accept", MediaType.APPLICATION_JSON_VALUE)
+        .build()
 ) : CommandStreamingAudio {
 
     
