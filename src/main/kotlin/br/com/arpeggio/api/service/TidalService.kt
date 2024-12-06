@@ -99,7 +99,7 @@ class TidalService(
     private suspend fun chamadaApiTidal_BuscaArtistas(uri: URI): String =
         webClient
             .get()
-            .uri(uri)
+            .uri{uri}
             .header("accept", "application/vnd.tidal.v1+json")
             .header("Authorization", authentication.headerValue)
             .header("Content-Type", "application/vnd.tidal.v1+json")
@@ -163,7 +163,7 @@ class TidalService(
 
     private suspend fun chamadaApiTidal_AlbunsDoArtista(uri: URI) = webClient
         .get()
-        .uri(uri)
+        .uri{uri}
         .header("accept", "application/vnd.tidal.v1+json")
         .header("Authorization", authentication.headerValue)
         .header("Content-Type", "application/vnd.tidal.v1+json")

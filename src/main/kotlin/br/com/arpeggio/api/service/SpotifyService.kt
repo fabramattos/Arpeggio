@@ -49,7 +49,7 @@ class SpotifyService(
 
         return webClient
             .get()
-            .uri(uri)
+            .uri{uri}
             .header("Authorization", authentication.headerValue)
             .retrieve()
             .bodyToMono<SpotifyApiArtistsResponse>()
@@ -71,7 +71,7 @@ class SpotifyService(
 
         return webClient
             .get()
-            .uri(uri)
+            .uri{uri}
             .header("Authorization", authentication.headerValue)
             .retrieve()
             .bodyToMono<SpotifyApiPodcastsResponse>()
@@ -92,7 +92,7 @@ class SpotifyService(
 
         return webClient
             .get()
-            .uri(uri)
+            .uri{uri}
             .header("Authorization", authentication.headerValue)
             .retrieve()
             .bodyToMono<SpotifyApiAlbumsResponse>()

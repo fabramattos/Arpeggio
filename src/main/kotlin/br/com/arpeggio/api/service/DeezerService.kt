@@ -23,9 +23,10 @@ import kotlin.coroutines.coroutineContext
 @Service
 class DeezerService(
     override val NOME_STREAMING: String = "Deezer",
+    val webClient: WebClient,
 ) : CommandStreamingAudio {
 
-    val webClient = createWebClient()
+    
 
     private suspend fun buscaArtista(nome: String): DeezerApiArtistData {
         val uri = UriComponentsBuilder
@@ -36,7 +37,7 @@ class DeezerService(
 
         return webClient
             .get()
-            .uri(uri)
+            .uri{uri}
             .retrieve()
             .bodyToMono<DeezerApiArtistsResponse>()
             .map { it.data }
@@ -51,22 +52,10 @@ class DeezerService(
             .queryParam("q", nome)
             .buildAndExpand()
             .toUri()
-        //TODO remover debug
-        val json: String = webClient
-            .get()
-            .uri(uri)
-            .retrieve()
-            .bodyToMono<String>()
-            .awaitSingleOrNull()
-            ?:"XABLAU"
-
-        Logs.debug("BUSCA PODCASTS: URL: $uri")
-        Logs.debug("BUSCA PODCASTS: JSON: $json");
-
 
         return webClient
             .get()
-            .uri(uri)
+            .uri{uri}
             .retrieve()
             .bodyToMono<DeezerApiPodcastsResponse>()
             .map { it.data }
@@ -74,38 +63,6 @@ class DeezerService(
             ?.firstOrNull()
             ?: throw PodcastNaoEncontradoException()
     }
-
-    companion object {
-        fun createWebClient(): WebClient {
-            return WebClient.builder()
-                .baseUrl("https://api.deezer.com")
-                .defaultHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
-                .defaultHeader("Accept", "application/json")
-                .filter(logRequest()) // Adiciona log da requisição
-                .filter(logResponse()) // Adiciona log da resposta
-                .build()
-        }
-
-        private fun logRequest(): ExchangeFilterFunction {
-            return ExchangeFilterFunction.ofRequestProcessor { request ->
-                Logs.debug("REQUEST: ${request.method()} ${request.url()}")
-                Logs.debug("Headers: ${request.headers()}")
-                Mono.just(request)
-            }
-        }
-
-        private fun logResponse(): ExchangeFilterFunction {
-            return ExchangeFilterFunction.ofResponseProcessor { response ->
-                Logs.debug("RESPONSE: ${response.statusCode()}")
-                response.bodyToMono(String::class.java).flatMap {
-                    Logs.debug("Body: $it")
-                    Mono.just(response)
-                }.onErrorResume { Mono.just(response) }
-            }
-        }
-    }
-
-
 
     private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: Int): List<DeezerApiAlbumData> {
         val uri = UriComponentsBuilder
@@ -116,7 +73,7 @@ class DeezerService(
 
         return webClient
             .get()
-            .uri(uri)
+            .uri{uri}
             .retrieve()
             .bodyToMono<DeezerApiAlbumsResponse>()
             .map { it.data }
@@ -136,7 +93,7 @@ class DeezerService(
         //TODO remover debug
         val json: String = webClient
             .get()
-            .uri(uri)
+            .uri{uri}
             .retrieve()
             .bodyToMono<String>()
             .awaitSingleOrNull()
@@ -146,7 +103,7 @@ class DeezerService(
 
         return webClient
             .get()
-            .uri(uri)
+            .uri{uri}
             .retrieve()
             .bodyToMono<DeezerApiAlbumsResponse>()
             .map { it.total }
