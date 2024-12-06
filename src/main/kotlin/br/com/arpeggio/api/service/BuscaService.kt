@@ -21,8 +21,8 @@ class BuscaService(
     val youtubeMusicService: YoutubeMusicService,
     val tidalService: TidalService,
     val commandStreamingAudio: List<CommandStreamingAudio> = listOf(
-        spotifyService,
         deezerService,
+        spotifyService,
         youtubeMusicService,
         tidalService,
     ),
