@@ -5,6 +5,7 @@ import br.com.arpeggio.api.dto.response.ExternalErrorResponse
 import br.com.arpeggio.api.dto.externalApi.youtube.YoutubeResult
 import br.com.arpeggio.api.dto.request.RequestParams
 import br.com.arpeggio.api.dto.request.RequestTipo
+import br.com.arpeggio.api.infra.log.Logs
 import jakarta.annotation.PostConstruct
 import org.openqa.selenium.By
 import org.openqa.selenium.By.cssSelector
@@ -47,7 +48,7 @@ class YoutubeMusicService(
 
     @PostConstruct
     fun logaUrlDoChrome() {
-        println("Selenium: url do driver: ${WEBDRIVER_HOST}:${WEBDRIVER_PORT}")
+        Logs.info("Selenium: url do driver: ${WEBDRIVER_HOST}:${WEBDRIVER_PORT}")
     }
 
     override suspend fun buscaPorArtista(requestParams: RequestParams): SearchResults {

@@ -28,11 +28,11 @@ object Logs {
     }
 
     fun debug(message: String) {
-        logger.debug("DEBUG: MESSAGE: $message")
+        logger.debug("DEBUG: $message")
     }
 
     fun info(message: String) {
-        logger.info("INFO/DEBUG: MESSAGE: $message")
+        logger.info("INFO: $message")
     }
 
     fun warn(nomeStreaming: String, idRequest: String, msg: String, erros: Int) {
