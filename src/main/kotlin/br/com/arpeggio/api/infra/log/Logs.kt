@@ -1,11 +1,11 @@
 package br.com.arpeggio.api.infra.log
 
-import mu.KotlinLogging
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class Logs {
     companion object {
-        private val logger: Logger = KotlinLogging.logger {}
+        private val logger: Logger = LoggerFactory.getLogger(Logs::class.java)
 
         fun error(nomeStreaming: String, idRequest: String, msg: String, erros: Int) {
             logger.error("ERRO EXTERNO: $nomeStreaming | Tentativa: $erros | msg: $msg | requestId: $idRequest")

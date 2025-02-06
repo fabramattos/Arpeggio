@@ -29,10 +29,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.9.0")
 
-    // logging
-    implementation("io.github.microutils:kotlin-logging-jvm:2.0.11")
-    implementation("ch.qos.logback:logback-classic:1.2.6")
-
     // selenium
     implementation("org.seleniumhq.selenium:selenium-java:4.16.1")
 
