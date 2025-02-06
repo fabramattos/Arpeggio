@@ -61,7 +61,7 @@ class DeezerService(
             .bodyToMono<DeezerApiPodcastsResponse>()
             .map { it.data }
             .awaitSingleOrNull()
-            ?.firstOrNull()
+            ?.first()
             ?: throw PodcastNaoEncontradoException())
 
         Logs.info("BUSCA PODCASTS, DATA: $deezerApiPodcastData")
