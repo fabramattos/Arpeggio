@@ -36,6 +36,9 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
     implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.3.0")
 
+    // fix para json nulo como resposta
+    implementation("org.hibernate.validator:hibernate-validator")
+
     //automação para executar o docker-compose ao rodar springboot app no desenvolvimento
     //developmentOnly("org.springframework.boot:spring-boot-docker-compose")
 
