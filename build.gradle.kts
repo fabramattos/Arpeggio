@@ -19,20 +19,32 @@ repositories {
 }
 
 dependencies {
+    // web
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("org.springframework.boot:spring-boot-starter-webflux:3.4.0")
+    implementation("org.springframework.boot:spring-boot-starter-web:3.4.0")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+
+    // coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.9.0")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-    implementation("org.springframework.boot:spring-boot-starter-web:3.4.0")
-    implementation("org.springframework.boot:spring-boot-starter-webflux:3.4.0")
+
+    // logging
+    implementation("io.github.microutils:kotlin-logging-jvm:2.0.11")
+    implementation("ch.qos.logback:logback-classic:1.2.6")
+
+    // selenium
     implementation("org.seleniumhq.selenium:selenium-java:4.16.1")
+
+    // swagger-ui
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
     implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.3.0")
-    implementation("org.slf4j:slf4j-api:2.0.9")
 
 
     //automação para executar o docker-compose ao rodar springboot app no desenvolvimento
     //developmentOnly("org.springframework.boot:spring-boot-docker-compose")
+
+    // tests
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.10.0")
     testImplementation("io.mockk:mockk:1.13.13")

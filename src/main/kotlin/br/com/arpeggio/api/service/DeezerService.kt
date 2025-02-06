@@ -8,16 +8,12 @@ import br.com.arpeggio.api.dto.response.PodcastsResponse
 import br.com.arpeggio.api.dto.response.SearchResults
 import br.com.arpeggio.api.infra.exception.*
 import br.com.arpeggio.api.infra.log.Logs
-import com.google.common.net.HttpHeaders
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
-import org.springframework.web.reactive.function.client.ExchangeFilterFunction
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
 import org.springframework.web.util.UriComponentsBuilder
-import reactor.core.publisher.Mono
-import kotlin.coroutines.coroutineContext
 
 
 @Service
@@ -28,8 +24,6 @@ class DeezerService(
         .defaultHeader("Accept", MediaType.APPLICATION_JSON_VALUE)
         .build()
 ) : CommandStreamingAudio {
-
-    
 
     private suspend fun buscaArtista(nome: String): DeezerApiArtistData {
         val uri = UriComponentsBuilder
@@ -50,21 +44,28 @@ class DeezerService(
     }
 
     private suspend fun buscaPodcasts(nome: String): DeezerApiPodcastData {
+
         val uri = UriComponentsBuilder
             .fromUriString("https://api.deezer.com/search/podcast")
             .queryParam("q", nome)
             .buildAndExpand()
             .toUri()
 
-        return webClient
+        Logs.debug("BUSCA PODCASTS, URI: $uri")
+
+        val deezerApiPodcastData = (webClient
             .get()
-            .uri{uri}
+            .uri { uri }
             .retrieve()
             .bodyToMono<DeezerApiPodcastsResponse>()
             .map { it.data }
             .awaitSingleOrNull()
             ?.firstOrNull()
-            ?: throw PodcastNaoEncontradoException()
+            ?: throw PodcastNaoEncontradoException())
+
+        Logs.debug("BUSCA PODCASTS, DATA: $deezerApiPodcastData")
+
+        return deezerApiPodcastData
     }
 
     private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: Int): List<DeezerApiAlbumData> {
@@ -93,7 +94,8 @@ class DeezerService(
             .buildAndExpand()
             .toUri()
 
-        //TODO remover debug
+        Logs.debug("BUSCA EPISODIOS, URI: $uri")
+
         val json: String = webClient
             .get()
             .uri{uri}
@@ -102,7 +104,7 @@ class DeezerService(
             .awaitSingleOrNull()
             ?:"XABLAU2"
 
-        Logs.debug("BUSCA EPISODIOS: $json");
+        Logs.debug("BUSCA EPISODIOS, JSON: $json")
 
         return webClient
             .get()
