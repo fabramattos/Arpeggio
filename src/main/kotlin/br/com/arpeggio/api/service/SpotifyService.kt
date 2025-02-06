@@ -126,7 +126,7 @@ class SpotifyService(
     }
 
     override suspend fun buscaPorPodcast(requestParams: RequestParams): SearchResults {
-        println("ENTRY: SpotifyService/buscaPorPodcast")
+        Logs.debug("ENTRY: SpotifyService/buscaPorPodcast")
         var erros = 0
         while (erros < 3) {
             val resultado = runCatching {

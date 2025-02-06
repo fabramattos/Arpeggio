@@ -3,36 +3,35 @@ package br.com.arpeggio.api.infra.log
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class Logs {
-    companion object {
-        private val logger: Logger = LoggerFactory.getLogger(Logs::class.java)
+object Logs {
 
-        fun error(nomeStreaming: String, idRequest: String, msg: String, erros: Int) {
-            logger.error("ERRO EXTERNO: $nomeStreaming | Tentativa: $erros | msg: $msg | requestId: $idRequest")
-        }
+    private val logger: Logger = LoggerFactory.getLogger("Logs")
 
-        fun searchStarted(nome: String, idRequest: String) {
-            logger.info("INFO: Pesquisando:   '$nome' | requestId: $idRequest")
-        }
+    fun error(nomeStreaming: String, idRequest: String, msg: String, erros: Int) {
+        logger.error("ERRO EXTERNO: $nomeStreaming | Tentativa: $erros | msg: $msg | requestId: $idRequest")
+    }
 
-        fun searchCompleted(nome: String, idRequest: String) {
-            logger.info("INFO: Finalizado:    '$nome' | requestId: $idRequest")
-        }
+    fun searchStarted(nome: String, idRequest: String) {
+        logger.info("INFO: Pesquisando:   '$nome' | requestId: $idRequest")
+    }
 
-        fun authenticationWarn(nomeStreaming: String, msg: String, erros: Int) {
-            logger.warn("WARN: AUTENTICAÇÃO: $nomeStreaming | Tentativa: $erros | msg: $msg")
-        }
+    fun searchCompleted(nome: String, idRequest: String) {
+        logger.info("INFO: Finalizado:    '$nome' | requestId: $idRequest")
+    }
 
-        fun authenticated(nomeStreaming: String) {
-            logger.info("INFO: Autenticação realizada: $nomeStreaming")
-        }
+    fun authenticationWarn(nomeStreaming: String, msg: String, erros: Int) {
+        logger.warn("WARN: AUTENTICAÇÃO: $nomeStreaming | Tentativa: $erros | msg: $msg")
+    }
 
-        fun debug(message: String) {
-            logger.debug("DEBUG: MESSAGE: $message")
-        }
+    fun authenticated(nomeStreaming: String) {
+        logger.info("INFO: Autenticação realizada: $nomeStreaming")
+    }
 
-        fun warn(nomeStreaming: String, idRequest: String, msg: String, erros: Int) {
-            logger.warn("WARN: $nomeStreaming | Tentativa: $erros | msg: $msg | requestId: $idRequest")
-        }
+    fun debug(message: String) {
+        logger.debug("DEBUG: MESSAGE: $message")
+    }
+
+    fun warn(nomeStreaming: String, idRequest: String, msg: String, erros: Int) {
+        logger.warn("WARN: $nomeStreaming | Tentativa: $erros | msg: $msg | requestId: $idRequest")
     }
 }
