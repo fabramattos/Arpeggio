@@ -7,11 +7,12 @@ plugins {
     id("io.spring.dependency-management") version "1.1.4"
 }
 
-group = "br.com.arpeggio"
+group = "br.com.arpeggio.api"
 version = "1.1"
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_20
+    targetCompatibility = JavaVersion.VERSION_20
 }
 
 repositories {
@@ -30,28 +31,29 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.9.0")
 
     // selenium
-    implementation("org.seleniumhq.selenium:selenium-java:4.16.1")
+    implementation("org.seleniumhq.selenium:selenium-java:4.28.1")
 
     // swagger-ui
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
     implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.3.0")
 
     // fix para json nulo como resposta
-    implementation("org.hibernate.validator:hibernate-validator")
+//    implementation("org.hibernate.validator:hibernate-validator")
+
 
     //automação para executar o docker-compose ao rodar springboot app no desenvolvimento
     //developmentOnly("org.springframework.boot:spring-boot-docker-compose")
 
     // tests
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.10.0")
-    testImplementation("io.mockk:mockk:1.13.13")
+    testImplementation("org.junit.jupiter:junit-jupiter-engine")
+    testImplementation("io.mockk:mockk:1.13.16")
 }
 
 tasks.withType<KotlinCompile> {
     kotlinOptions {
         freeCompilerArgs += "-Xjsr305=strict"
-        jvmTarget = "17"
+        jvmTarget = "20"
     }
 }
 

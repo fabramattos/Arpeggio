@@ -1,6 +1,6 @@
-logging:
-  level:
-    root: DEBUG
+spring:
+  profiles:
+    active: prod
 
 springdoc:
   swagger-ui:
