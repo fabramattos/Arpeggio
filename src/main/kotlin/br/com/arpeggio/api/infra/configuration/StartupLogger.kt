@@ -14,6 +14,6 @@ class StartupLogger(private val env: Environment) : ApplicationRunner {
     override fun run(args: ApplicationArguments?) {
         // Logando os perfis ativos
         val activeProfiles = env.activeProfiles.joinToString(", ")
-        logger.info("Perfis ativos: $activeProfiles")
+        logger.info("ACTIVE PROFILE: $activeProfiles")
     }
 }

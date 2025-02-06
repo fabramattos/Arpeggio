@@ -44,6 +44,7 @@ class DeezerService(
     }
 
     private suspend fun buscaPodcasts(nome: String): DeezerApiPodcastData {
+        Logs.info("ENTRY: DeezerService/buscaPodcasts")
 
         val uri = UriComponentsBuilder
             .fromUriString("https://api.deezer.com/search/podcast")
@@ -51,7 +52,7 @@ class DeezerService(
             .buildAndExpand()
             .toUri()
 
-        println("BUSCA PODCASTS, URI: $uri")
+        Logs.info("BUSCA PODCASTS, URI: $uri")
 
         val deezerApiPodcastData = (webClient
             .get()
@@ -63,7 +64,7 @@ class DeezerService(
             ?.firstOrNull()
             ?: throw PodcastNaoEncontradoException())
 
-        println("BUSCA PODCASTS, DATA: $deezerApiPodcastData")
+        Logs.info("BUSCA PODCASTS, DATA: $deezerApiPodcastData")
 
         return deezerApiPodcastData
     }
@@ -89,12 +90,14 @@ class DeezerService(
     }
 
     private suspend fun buscaEpisodiosDoPodcast(idPodcast: Int): Int {
+        Logs.info("ENTRY: DeezerService/buscaEpisodiosDoPodcast")
+
         val uri = UriComponentsBuilder
             .fromUriString("https://api.deezer.com/podcast/$idPodcast/episodes")
             .buildAndExpand()
             .toUri()
 
-        println("BUSCA EPISODIOS, URI: $uri")
+        Logs.info("BUSCA EPISODIOS, URI: $uri")
 
         val json: String = webClient
             .get()
@@ -104,7 +107,7 @@ class DeezerService(
             .awaitSingleOrNull()
             ?:"XABLAU2"
 
-        println("BUSCA EPISODIOS, JSON: $json")
+        Logs.info("BUSCA EPISODIOS, JSON: $json")
 
         return webClient
             .get()
@@ -139,7 +142,7 @@ class DeezerService(
     }
 
     override suspend fun buscaPorPodcast(requestParams: RequestParams): SearchResults {
-        println("ENTRY: DeezerService/buscaPorPodcast")
+        Logs.info("ENTRY: DeezerService/buscaPorPodcast")
         var erros = 0
         while(erros < 3){
             val response = runCatching {
