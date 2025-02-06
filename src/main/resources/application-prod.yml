@@ -8,4 +8,7 @@ logging:
 server:
   port: ${PORT}
   address: 0.0.0.0
-  forward-headers-strategy: framework
+#  forward-headers-strategy: framework
+  tomcat:
+    connection-timeout: 30s # Exemplo: 30 segundos
+    socket-timeout: 30s # Tempo limite para operações de socket
