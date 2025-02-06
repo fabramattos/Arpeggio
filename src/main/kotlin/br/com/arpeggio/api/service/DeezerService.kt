@@ -51,7 +51,7 @@ class DeezerService(
             .buildAndExpand()
             .toUri()
 
-        Logs.debug("BUSCA PODCASTS, URI: $uri")
+        println("BUSCA PODCASTS, URI: $uri")
 
         val deezerApiPodcastData = (webClient
             .get()
@@ -63,7 +63,7 @@ class DeezerService(
             ?.firstOrNull()
             ?: throw PodcastNaoEncontradoException())
 
-        Logs.debug("BUSCA PODCASTS, DATA: $deezerApiPodcastData")
+        println("BUSCA PODCASTS, DATA: $deezerApiPodcastData")
 
         return deezerApiPodcastData
     }
@@ -94,7 +94,7 @@ class DeezerService(
             .buildAndExpand()
             .toUri()
 
-        Logs.debug("BUSCA EPISODIOS, URI: $uri")
+        println("BUSCA EPISODIOS, URI: $uri")
 
         val json: String = webClient
             .get()
@@ -104,7 +104,7 @@ class DeezerService(
             .awaitSingleOrNull()
             ?:"XABLAU2"
 
-        Logs.debug("BUSCA EPISODIOS, JSON: $json")
+        println("BUSCA EPISODIOS, JSON: $json")
 
         return webClient
             .get()
