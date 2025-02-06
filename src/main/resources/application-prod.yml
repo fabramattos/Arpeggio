@@ -1,6 +1,9 @@
 logging:
   level:
     root: DEBUG
+    br.com.arpeggio.api: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{36} - %msg%n"
 
 server:
   port: ${PORT}
