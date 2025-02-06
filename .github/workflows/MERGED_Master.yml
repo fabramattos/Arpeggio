@@ -35,7 +35,7 @@ jobs:
         run: ./gradlew clean
 
       - name: Gradle Build Sem Testes
-        run: ./gradlew build -x test --refresh-dependencies
+        run: ./gradlew build -x test
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -51,6 +51,5 @@ jobs:
         with:
           context: .
           file: ./Dockerfile-prod
-          no-cache: true
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPONAME_LATEST }}
