@@ -139,6 +139,7 @@ class DeezerService(
     }
 
     override suspend fun buscaPorPodcast(requestParams: RequestParams): SearchResults {
+        println("ENTRY: DeezerService/buscaPorPodcast")
         var erros = 0
         while(erros < 3){
             val response = runCatching {
