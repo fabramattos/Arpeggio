@@ -1,6 +1,9 @@
 spring:
   profiles:
-    active: prod
+    active: dev
+
+server:
+  forward-headers-strategy: native
 
 springdoc:
   swagger-ui:
