@@ -35,7 +35,7 @@ object Logs {
         logger.info("INFO: $message")
     }
 
-    fun warn(nomeStreaming: String, idRequest: String, msg: String, erros: Int) {
-        logger.warn("WARN: $nomeStreaming | Tentativa: $erros | msg: $msg | requestId: $idRequest")
+    fun warn(nomeStreaming: String, idRequest: String, msg: String) {
+        logger.warn("WARN: $nomeStreaming | msg: $msg | requestId: $idRequest")
     }
 }

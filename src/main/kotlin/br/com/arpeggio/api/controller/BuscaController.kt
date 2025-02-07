@@ -35,7 +35,7 @@ class BuscaController(val service: BuscaService) {
 
 
     @GetMapping("/podcast")
-    fun buscaPodcast(
+    suspend fun buscaPodcast(
         @RequestParam (required = true) nome: String,
         @Parameter(
             name = "regiao",
