@@ -21,10 +21,10 @@ repositories {
 
 dependencies {
     // web
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:2.1.10")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2" )
 
     // para permitir retry em métodos que falham
     implementation("org.springframework.retry:spring-retry")

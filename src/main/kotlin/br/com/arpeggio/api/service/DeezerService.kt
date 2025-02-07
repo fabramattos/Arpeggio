@@ -8,8 +8,8 @@ import br.com.arpeggio.api.dto.response.PodcastsResponse
 import br.com.arpeggio.api.dto.response.SearchResults
 import br.com.arpeggio.api.infra.exception.*
 import br.com.arpeggio.api.infra.log.Logs
+import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
-import org.springframework.http.MediaType
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Recover
 import org.springframework.retry.annotation.Retryable
@@ -22,13 +22,7 @@ import org.springframework.web.util.UriComponentsBuilder
 @Service
 class DeezerService(
     override val NOME_STREAMING: String = "Deezer",
-    val webClient: WebClient = WebClient.builder()
-        .defaultHeader(
-            "User-Agent",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
-        )
-        .defaultHeader("Accept", MediaType.APPLICATION_JSON_VALUE)
-        .build()
+    val webClient: WebClient
 ) : CommandStreamingAudio {
 
     private suspend fun buscaArtista(nome: String): DeezerApiArtistData {
@@ -69,7 +63,7 @@ class DeezerService(
             .retrieve()
             .bodyToMono<DeezerApiPodcastsResponse>()
             .map { it.data }
-            .awaitSingleOrNull()
+            .awaitSingle()
             ?.first()
             ?: throw PodcastNaoEncontradoException()
     }
@@ -114,7 +108,7 @@ class DeezerService(
             .retrieve()
             .bodyToMono<DeezerApiAlbumsResponse>()
             .map { it.total }
-            .awaitSingleOrNull()
+            .awaitSingle()
             ?: throw FalhaAoBuscarPodcastsException()
     }
 
