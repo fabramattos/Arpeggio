@@ -1,10 +1,10 @@
 package br.com.arpeggio.api.service
 
-import br.com.arpeggio.api.dto.response.SearchResults
-import br.com.arpeggio.api.dto.response.ExternalErrorResponse
 import br.com.arpeggio.api.dto.externalApi.youtube.YoutubeResult
 import br.com.arpeggio.api.dto.request.RequestParams
 import br.com.arpeggio.api.dto.request.RequestTipo
+import br.com.arpeggio.api.dto.response.ExternalErrorResponse
+import br.com.arpeggio.api.dto.response.SearchResults
 import br.com.arpeggio.api.infra.log.Logs
 import jakarta.annotation.PostConstruct
 import org.openqa.selenium.By
@@ -20,7 +20,7 @@ import org.openqa.selenium.support.ui.Wait
 import org.openqa.selenium.support.ui.WebDriverWait
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
-import java.net.URL
+import java.net.URI
 import java.time.Duration
 
 private const val XPATH_BOTAO_ARTISTA: String = "//yt-formatted-string[text()='Artistas']"
@@ -53,6 +53,7 @@ class YoutubeMusicService(
 
     override suspend fun buscaPorArtista(requestParams: RequestParams): SearchResults {
         /*
+        Logs.info("ENTRY: Youtube/buscaPorArtista | Request = $requestParams")
         val busca = runCatching { executaSelenium(requestParams) }
         val artista = busca.getOrNull()
 
@@ -82,7 +83,7 @@ class YoutubeMusicService(
 
         val navegacao = runCatching {
             // para executar via docker e em ambiente de prod
-            driver = RemoteWebDriver(URL("${WEBDRIVER_HOST}:${WEBDRIVER_PORT}"), options)
+            driver = RemoteWebDriver(URI("${WEBDRIVER_HOST}:${WEBDRIVER_PORT}").toURL(), options)
 
             // para executar localmente sem docker em ambiente dev
 //            driver = EdgeDriver()

@@ -12,7 +12,6 @@ import br.com.arpeggio.api.infra.log.Logs
 import br.com.arpeggio.api.utilitario.tratarBusca
 import kotlinx.coroutines.*
 import org.springframework.stereotype.Service
-import kotlin.coroutines.CoroutineContext
 
 @Service
 class BuscaService(

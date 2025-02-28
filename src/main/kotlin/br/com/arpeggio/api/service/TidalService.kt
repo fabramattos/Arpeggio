@@ -43,6 +43,7 @@ class TidalService(
     }
 
     override suspend fun buscaPorArtista(requestParams: RequestParams): SearchResults {
+        Logs.info("ENTRY: Tidal/buscaPorArtista | Request = $requestParams")
         var erros = 0
         while (erros < 3) {
             val resultadoBusca = runCatching {
@@ -110,7 +111,7 @@ class TidalService(
 
 
     private fun uriBuscaArtistas(requestParams: RequestParams) = UriComponentsBuilder
-        .fromUriString("https://openapi.tidal.com/search")
+        .fromUri(URI("https://openapi.tidal.com/search"))
         .queryParam("query", requestParams.busca)
         .queryParam("type", "ARTISTS")
         .queryParam("offset", 0)
@@ -173,7 +174,7 @@ class TidalService(
         ?: throw FalhaAoBuscarAlbunsDoArtista()
 
     private fun uriAlbunsDoArtista(requestParams: RequestParams, idArtista: String, offset: Int) = UriComponentsBuilder
-        .fromUriString("https://openapi.tidal.com/artists/${idArtista}/albums")
+        .fromUri(URI("https://openapi.tidal.com/artists/${idArtista}/albums"))
         .queryParam("countryCode", requestParams.regiao.name)
         .queryParam("offset", offset)
         .queryParam("limit", LIMIT)

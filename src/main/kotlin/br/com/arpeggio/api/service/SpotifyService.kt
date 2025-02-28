@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
 import org.springframework.web.util.UriComponentsBuilder
+import java.net.URI
 
 private const val VALIDADE_TOKEN = 3600*1000L
 
@@ -38,8 +39,9 @@ class SpotifyService(
 
 
     private suspend fun buscaArtista(requestParams: RequestParams): SpotifyApiArtistData {
+        Logs.info("ENTRY: SpotifyService/buscaArtista")
         val uri = UriComponentsBuilder
-            .fromUriString("https://api.spotify.com/v1/search")
+            .fromUri(URI("https://api.spotify.com/v1/search"))
             .queryParam("q", requestParams.busca)
             .queryParam("type", "artist")
             .queryParam("market", requestParams.regiao.name)
@@ -60,8 +62,9 @@ class SpotifyService(
     }
 
     private suspend fun buscaPodcasts(requestParams: RequestParams): SpotifyApiPodcastData {
+        Logs.info("ENTRY: SpotifyService/buscaPodcasts")
         val uri = UriComponentsBuilder
-            .fromUriString("https://api.spotify.com/v1/search")
+            .fromUri(URI("https://api.spotify.com/v1/search"))
             .queryParam("q", requestParams.busca)
             .queryParam("type", "show")
             .queryParam("market", requestParams.regiao.name)
@@ -82,8 +85,9 @@ class SpotifyService(
     }
 
     private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: String): SpotifyApiAlbumsResponse {
+        Logs.info("ENTRY: SpotifyService/buscaAlbunsDoArtista")
         val uri = UriComponentsBuilder
-            .fromUriString("https://api.spotify.com/v1/artists/${idArtista}/albums")
+            .fromUri(URI("https://api.spotify.com/v1/artists/${idArtista}/albums"))
             .queryParam("include_groups", retornaTipos(requestParams))
             .queryParam("market", requestParams.regiao.valor)
             .queryParam("limit", 1)
@@ -101,6 +105,7 @@ class SpotifyService(
     }
 
     override suspend fun buscaPorArtista(requestParams: RequestParams): SearchResults {
+        Logs.info("ENTRY: SpotifyService/buscaPorArtista | Request = $requestParams")
         var erros = 0
         while (erros < 3) {
             val resultado = runCatching {
@@ -126,7 +131,7 @@ class SpotifyService(
     }
 
     override suspend fun buscaPorPodcast(requestParams: RequestParams): SearchResults {
-        Logs.debug("ENTRY: SpotifyService/buscaPorPodcast")
+        Logs.info("ENTRY: SpotifyService/buscaPorPodcast | Request = $requestParams")
         var erros = 0
         while (erros < 3) {
             val resultado = runCatching {
