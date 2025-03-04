@@ -43,7 +43,7 @@ class TidalService(
     }
 
     override suspend fun buscaPorArtista(requestParams: RequestParams): SearchResults {
-        Logs.info("ENTRY: Tidal/buscaPorArtista | Request = $requestParams")
+        Logs.info("ENTRY: Tidal/buscaPorArtista", requestParams.id)
         var erros = 0
         while (erros < 3) {
             val resultadoBusca = runCatching {

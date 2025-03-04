@@ -39,7 +39,7 @@ class SpotifyService(
 
 
     private suspend fun buscaArtista(requestParams: RequestParams): SpotifyApiArtistData {
-        Logs.info("ENTRY: SpotifyService/buscaArtista")
+        Logs.info("ENTRY: SpotifyService/buscaArtista", requestParams.id)
         val uri = UriComponentsBuilder
             .fromUri(URI("https://api.spotify.com/v1/search"))
             .queryParam("q", requestParams.busca)
@@ -62,7 +62,7 @@ class SpotifyService(
     }
 
     private suspend fun buscaPodcasts(requestParams: RequestParams): SpotifyApiPodcastData {
-        Logs.info("ENTRY: SpotifyService/buscaPodcasts")
+        Logs.info("ENTRY: SpotifyService/buscaPodcasts", requestParams.id)
         val uri = UriComponentsBuilder
             .fromUri(URI("https://api.spotify.com/v1/search"))
             .queryParam("q", requestParams.busca)
@@ -85,7 +85,7 @@ class SpotifyService(
     }
 
     private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: String): SpotifyApiAlbumsResponse {
-        Logs.info("ENTRY: SpotifyService/buscaAlbunsDoArtista")
+        Logs.info("ENTRY: SpotifyService/buscaAlbunsDoArtista", requestParams.id)
         val uri = UriComponentsBuilder
             .fromUri(URI("https://api.spotify.com/v1/artists/${idArtista}/albums"))
             .queryParam("include_groups", retornaTipos(requestParams))
@@ -105,7 +105,7 @@ class SpotifyService(
     }
 
     override suspend fun buscaPorArtista(requestParams: RequestParams): SearchResults {
-        Logs.info("ENTRY: SpotifyService/buscaPorArtista | Request = $requestParams")
+        Logs.info("ENTRY: SpotifyService/buscaPorArtista", requestParams.id)
         var erros = 0
         while (erros < 3) {
             val resultado = runCatching {
@@ -131,7 +131,7 @@ class SpotifyService(
     }
 
     override suspend fun buscaPorPodcast(requestParams: RequestParams): SearchResults {
-        Logs.info("ENTRY: SpotifyService/buscaPorPodcast | Request = $requestParams")
+        Logs.info("ENTRY: SpotifyService/buscaPorPodcast", requestParams.id)
         var erros = 0
         while (erros < 3) {
             val resultado = runCatching {

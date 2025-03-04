@@ -38,7 +38,7 @@ class BuscaService(
 
         val listaResultados = mutableListOf<SearchResults>()
         runBlocking {
-            Logs.searchStarted(nomeBusca, requestParams.id.toString())
+            Logs.searchStarted(requestParams)
             commandStreamingAudio.forEach { streaming ->
                 launch {
                     val resultado = streaming.buscaPorArtista(requestParams)
@@ -46,7 +46,7 @@ class BuscaService(
                 }
             }
         }
-        Logs.searchCompleted(nomeBusca, requestParams.id.toString())
+        Logs.searchCompleted(requestParams)
 
         return ResultsResponse(nomeBusca, listaResultados)
     }
@@ -80,7 +80,7 @@ class BuscaService(
         val regiao = verificaRegiao(requestRegiao)
         val requestParams = RequestParams(nomeBusca, regiao, emptyList())
 
-        Logs.searchStarted(nomeBusca, requestParams.id.toString())
+        Logs.searchStarted(requestParams)
 
         val deferredResults = commandStreamingAudio.map { streaming ->
             async { streaming.buscaPorPodcast(requestParams) }
@@ -88,7 +88,7 @@ class BuscaService(
 
         val listaResultados = deferredResults.awaitAll()
 
-        Logs.searchCompleted(nomeBusca, requestParams.id.toString())
+        Logs.searchCompleted(requestParams)
 
         return@coroutineScope ResultsResponse(nomeBusca, listaResultados)
     }

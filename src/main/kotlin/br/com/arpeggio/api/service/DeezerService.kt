@@ -26,11 +26,11 @@ class DeezerService(
     val webClient: WebClient
 ) : CommandStreamingAudio {
 
-    private suspend fun buscaArtista(nome: String): DeezerApiArtistData {
-        Logs.info("ENTRY: DeezerService/buscaPorArtista")
+    private suspend fun buscaArtista(request: RequestParams): DeezerApiArtistData {
+        Logs.info("ENTRY: DeezerService/buscaPorArtista", request.id)
         val uri = UriComponentsBuilder
             .fromUri(URI("https://api.deezer.com/search/artist"))
-            .queryParam("q", nome)
+            .queryParam("q", request.busca)
             .buildAndExpand()
             .toUri()
 
@@ -50,12 +50,12 @@ class DeezerService(
         maxAttempts = 3,
         backoff = Backoff(delay = 1000),
     )
-    private suspend fun buscaPodcasts(nome: String): DeezerApiPodcastData {
-        Logs.info("ENTRY: DeezerService/buscaPodcasts")
+    private suspend fun buscaPodcasts(requestParams: RequestParams): DeezerApiPodcastData {
+        Logs.info("ENTRY: DeezerService/buscaPodcasts", requestParams.id)
 
         val uri = UriComponentsBuilder
             .fromUri(URI("https://api.deezer.com/search/podcast"))
-            .queryParam("q", nome)
+            .queryParam("q", requestParams.busca)
             .buildAndExpand()
             .toUri()
 
@@ -71,7 +71,7 @@ class DeezerService(
     }
 
     private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: Int): List<DeezerApiAlbumData> {
-        Logs.info("ENTRY: DeezerService/buscaPorArtista | Request = $requestParams")
+        Logs.info("ENTRY: DeezerService/buscaPorArtista", requestParams.id)
         val uri = UriComponentsBuilder
             .fromUri(URI("https://api.deezer.com/artist/$idArtista/albums"))
             .queryParam("limit", 999)
@@ -97,8 +97,8 @@ class DeezerService(
         maxAttempts = 3,
         backoff = Backoff(delay = 1000),
     )
-    private suspend fun buscaEpisodiosDoPodcast(idPodcast: Int): Int {
-        Logs.info("ENTRY: DeezerService/buscaEpisodiosDoPodcast")
+    private suspend fun buscaEpisodiosDoPodcast(requestParam: RequestParams, idPodcast: Int): Int {
+        Logs.info("ENTRY: DeezerService/buscaEpisodiosDoPodcast", requestParam.id)
 
         val uri = UriComponentsBuilder
             .fromUri(URI("https://api.deezer.com/podcast/$idPodcast/episodes"))
@@ -117,11 +117,11 @@ class DeezerService(
 
 
     override suspend fun buscaPorArtista(requestParams: RequestParams): SearchResults {
-        Logs.info("ENTRY: DeezerService/buscaPorArtista | Request = $requestParams")
+        Logs.info("ENTRY: DeezerService/buscaPorArtista", requestParams.id)
         var erros = 0
         while (erros < 3) {
             val response = runCatching {
-                val artista = buscaArtista(requestParams.busca)
+                val artista = buscaArtista(requestParams)
                 val totalDeAlbuns = buscaAlbunsDoArtista(requestParams, artista.id).size
                 return AlbumsResponse(NOME_STREAMING, artista.name, totalDeAlbuns)
             }
@@ -142,9 +142,9 @@ class DeezerService(
     }
 
     override suspend fun buscaPorPodcast(requestParams: RequestParams): SearchResults {
-        Logs.info("ENTRY: DeezerService/buscaPorPodcast | Request = $requestParams")
-        val podcast = buscaPodcasts(requestParams.busca)
-        val totalDeEpisodios = buscaEpisodiosDoPodcast(podcast.id)
+        Logs.info("ENTRY: DeezerService/buscaPorPodcast", requestParams.id)
+        val podcast = buscaPodcasts(requestParams)
+        val totalDeEpisodios = buscaEpisodiosDoPodcast(requestParams, podcast.id)
         return PodcastsResponse(NOME_STREAMING, podcast.title, totalDeEpisodios)
     }
 
