@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController
 class BuscaController(val service: BuscaService) {
 
     @GetMapping("/artista")
-    fun buscaArtista(
+    suspend fun buscaArtista(
         @RequestParam (required = true) nome: String,
         @Parameter(
             name = "regiao",

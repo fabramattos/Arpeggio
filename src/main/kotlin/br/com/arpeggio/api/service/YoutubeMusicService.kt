@@ -3,8 +3,7 @@ package br.com.arpeggio.api.service
 import br.com.arpeggio.api.dto.externalApi.youtube.YoutubeResult
 import br.com.arpeggio.api.dto.request.RequestParams
 import br.com.arpeggio.api.dto.request.RequestTipo
-import br.com.arpeggio.api.dto.response.ExternalErrorResponse
-import br.com.arpeggio.api.dto.response.SearchResults
+import br.com.arpeggio.api.dto.response.ItemResponse
 import br.com.arpeggio.api.infra.log.Logs
 import jakarta.annotation.PostConstruct
 import org.openqa.selenium.By
@@ -48,10 +47,10 @@ class YoutubeMusicService(
 
     @PostConstruct
     fun logaUrlDoChrome() {
-        Logs.info("Selenium: url do driver: ${WEBDRIVER_HOST}:${WEBDRIVER_PORT}")
+        Logs.info("Selenium: url do driver: ${WEBDRIVER_HOST}:${WEBDRIVER_PORT}", 0)
     }
 
-    override suspend fun buscaPorArtista(requestParams: RequestParams): SearchResults {
+    override suspend fun buscaPorArtista(requestParams: RequestParams): ItemResponse {
         /*
         Logs.info("ENTRY: Youtube/buscaPorArtista | Request = $requestParams")
         val busca = runCatching { executaSelenium(requestParams) }
@@ -64,12 +63,18 @@ class YoutubeMusicService(
 
          */
 
-        return ExternalErrorResponse(NOME_STREAMING, "Serviço temporariamente desabilitado")
+        return ItemResponse(
+            streaming = NOME_STREAMING,
+            consulta = requestParams.busca,
+            erro = "Serviço temporariamente desabilitado")
     }
 
-    override suspend fun buscaPorPodcast(requestParams: RequestParams): SearchResults {
+    override suspend fun buscaPorPodcast(requestParams: RequestParams): ItemResponse {
         //TODO("Not yet implemented")
-        return ExternalErrorResponse(NOME_STREAMING, "busca por podcast ainda não implementada")
+        return ItemResponse(
+            streaming = NOME_STREAMING,
+            consulta = requestParams.busca,
+            erro = "busca por podcast ainda não implementada")
     }
 
     private fun executaSelenium(requestParams: RequestParams): YoutubeResult {

@@ -3,14 +3,16 @@ package br.com.arpeggio.api.service
 import br.com.arpeggio.api.dto.request.RequestParams
 import br.com.arpeggio.api.dto.request.RequestRegiao
 import br.com.arpeggio.api.dto.request.RequestTipo
+import br.com.arpeggio.api.dto.response.ItemResponse
 import br.com.arpeggio.api.dto.response.ResultsResponse
-import br.com.arpeggio.api.dto.response.SearchResults
 import br.com.arpeggio.api.infra.exception.RequestParamNomeException
 import br.com.arpeggio.api.infra.exception.RequestParamRegiaoException
 import br.com.arpeggio.api.infra.exception.RequestParamTipoException
 import br.com.arpeggio.api.infra.log.Logs
 import br.com.arpeggio.api.utilitario.tratarBusca
-import kotlinx.coroutines.*
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Service
 
 @Service
@@ -20,14 +22,14 @@ class BuscaService(
     val youtubeMusicService: YoutubeMusicService,
     val tidalService: TidalService,
     val commandStreamingAudio: List<CommandStreamingAudio> = listOf(
-        deezerService,
         spotifyService,
+        deezerService,
         youtubeMusicService,
         tidalService,
     ),
 ) {
 
-    fun buscaPorArtista(nome: String, requestRegiao: String, requestTipo: String): ResultsResponse {
+    suspend fun buscaPorArtista(nome: String, requestRegiao: String, requestTipo: String): ResultsResponse = coroutineScope {
         if (nome.isBlank())
             throw RequestParamNomeException()
 
@@ -36,7 +38,7 @@ class BuscaService(
         val regiao = verificaRegiao(requestRegiao)
         val requestParams = RequestParams(nomeBusca, regiao, tipos)
 
-        val listaResultados = mutableListOf<SearchResults>()
+        val listaResultados = mutableListOf<ItemResponse>()
         runBlocking {
             Logs.searchStarted(requestParams)
             commandStreamingAudio.forEach { streaming ->
@@ -48,7 +50,7 @@ class BuscaService(
         }
         Logs.searchCompleted(requestParams)
 
-        return ResultsResponse(nomeBusca, listaResultados)
+        return@coroutineScope ResultsResponse(nomeBusca, listaResultados)
     }
 
     private fun montaListaDeTipos(requestTipo: String): List<RequestTipo> =
@@ -82,11 +84,13 @@ class BuscaService(
 
         Logs.searchStarted(requestParams)
 
-        val deferredResults = commandStreamingAudio.map { streaming ->
-            async { streaming.buscaPorPodcast(requestParams) }
+        var listaResultados = mutableListOf<ItemResponse>()
+        commandStreamingAudio.forEach { streaming ->
+            launch {
+                val resultado = streaming.buscaPorPodcast(requestParams)
+                listaResultados.add(resultado)
+            }
         }
-
-        val listaResultados = deferredResults.awaitAll()
 
         Logs.searchCompleted(requestParams)
 

@@ -1,23 +1,21 @@
 package br.com.arpeggio.api.service
 
-import br.com.arpeggio.api.dto.response.SearchResults
-import br.com.arpeggio.api.dto.response.AlbumsResponse
-import br.com.arpeggio.api.dto.response.ExternalErrorResponse
 import br.com.arpeggio.api.dto.externalApi.tidal.TidalResult
 import br.com.arpeggio.api.dto.request.RequestParams
 import br.com.arpeggio.api.dto.request.RequestTipo
-import br.com.arpeggio.api.infra.exception.*
+import br.com.arpeggio.api.dto.response.ItemResponse
+import br.com.arpeggio.api.infra.exception.ArtistaNaoEncontradoException
+import br.com.arpeggio.api.infra.exception.FalhaInformacoesImprecisasDireitosAutoraisException
 import br.com.arpeggio.api.infra.log.Logs
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
-import org.springframework.web.reactive.function.client.bodyToMono
+import org.springframework.web.reactive.function.client.awaitBody
 import org.springframework.web.util.UriComponentsBuilder
 import java.net.URI
 
@@ -42,46 +40,37 @@ class TidalService(
             }
     }
 
-    override suspend fun buscaPorArtista(requestParams: RequestParams): SearchResults {
-        Logs.info("ENTRY: Tidal/buscaPorArtista", requestParams.id)
-        var erros = 0
-        while (erros < 3) {
-            val resultadoBusca = runCatching {
-                val artista = buscaArtista(requestParams)
-                    .apply { qty = buscaAlbunsDoArtista(requestParams, id)}
+    override suspend fun buscaPorArtista(requestParams: RequestParams): ItemResponse {
+        Logs.info("ENTRY: TidalService/buscaPorArtista", requestParams.id)
+        try {
+            val artista = buscaArtista(requestParams)
+                .apply { qty = buscaAlbunsDoArtista(requestParams, id) }
 
-                return AlbumsResponse(NOME_STREAMING, artista.name, artista.qty)
-            }
-
-            resultadoBusca.onFailure {
-                erros++
-                Logs.warn(NOME_STREAMING, requestParams.id.toString(), it.localizedMessage)
-                when (it) {
-                    is ArtistaNaoEncontradoException,
-                    is FalhaInformacoesImprecisasDireitosAutoraisException,
-                    ->
-                        return ExternalErrorResponse(NOME_STREAMING, it.localizedMessage)
-
-                    else -> {
-                        if (it.localizedMessage.contains("401"))
-                            authentication.atualizaToken(webClient)
-                    }
-                }
-            }
+            return ItemResponse(
+                streaming = NOME_STREAMING,
+                consulta = artista.name,
+                albuns = artista.qty
+            )
+        } catch (ex: Exception) {
+            return ItemResponse(
+                streaming = NOME_STREAMING,
+                consulta = requestParams.busca,
+                erro = ex.localizedMessage
+            )
         }
-        return ExternalErrorResponse(
-            NOME_STREAMING, FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).localizedMessage
-        )
     }
 
-    override suspend fun buscaPorPodcast(requestParams: RequestParams): SearchResults {
-        return ExternalErrorResponse(NOME_STREAMING, "busca por podcast ainda não implementada")
-        //TODO(Tidal não possui catálogo de podcast)
+    override suspend fun buscaPorPodcast(requestParams: RequestParams): ItemResponse {
+        return ItemResponse(
+            streaming = NOME_STREAMING,
+            consulta = requestParams.busca,
+            erro = "busca por podcast ainda não implementada"
+        )
     }
 
     private suspend fun buscaArtista(requestParams: RequestParams): TidalResult {
         val uri = uriBuscaArtistas(requestParams)
-        val response = chamadaApiTidal_BuscaArtistas(uri)
+        val response = chamadaApiTidal_BuscaArtistas(requestParams, uri)
 
         val artistaDados = ObjectMapper()
             .readTree(response)
@@ -97,17 +86,27 @@ class TidalService(
         )
     }
 
-    private suspend fun chamadaApiTidal_BuscaArtistas(uri: URI): String =
-        webClient
-            .get()
-            .uri{uri}
-            .header("accept", "application/vnd.tidal.v1+json")
-            .header("Authorization", authentication.headerValue)
-            .header("Content-Type", "application/vnd.tidal.v1+json")
-            .retrieve()
-            .bodyToMono<String>()
-            .awaitSingleOrNull()
-            ?: throw FalhaAoBuscarArtistasException()
+    private suspend fun chamadaApiTidal_BuscaArtistas(requestParams: RequestParams, uri: URI): String {
+        var error: Exception? = null
+        repeat(2) {
+            try {
+                Logs.info("ENTRY: TidalService/ChamadaApiTidal_BuscaArtistas", requestParams.id)
+                webClient
+                    .get()
+                    .uri { uri }
+                    .header("accept", "application/vnd.tidal.v1+json")
+                    .header("Authorization", authentication.headerValue)
+                    .header("Content-Type", "application/vnd.tidal.v1+json")
+                    .retrieve()
+                    .awaitBody<String>()
+            } catch (ex: Exception) {
+                error = ex
+                Logs.error(NOME_STREAMING, requestParams.id, ex.localizedMessage)
+                authentication.atualizaToken(webClient)
+            }
+        }
+        throw RuntimeException(error)
+    }
 
 
     private fun uriBuscaArtistas(requestParams: RequestParams) = UriComponentsBuilder
@@ -121,7 +120,6 @@ class TidalService(
         .toUri()
 
 
-
     private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: String): Int {
         var errosReq = 0
         var offset = 0
@@ -131,7 +129,7 @@ class TidalService(
             val resultado = runCatching {
 
                 val uri = uriAlbunsDoArtista(requestParams, idArtista, offset)
-                val response = chamadaApiTidal_AlbunsDoArtista(uri)
+                val response = chamadaApiTidal_AlbunsDoArtista(requestParams, uri)
 
                 val albunsNode = ObjectMapper()
                     .readTree(response)
@@ -162,24 +160,36 @@ class TidalService(
         return totalAlbuns
     }
 
-    private suspend fun chamadaApiTidal_AlbunsDoArtista(uri: URI) = webClient
-        .get()
-        .uri{uri}
-        .header("accept", "application/vnd.tidal.v1+json")
-        .header("Authorization", authentication.headerValue)
-        .header("Content-Type", "application/vnd.tidal.v1+json")
-        .retrieve()
-        .bodyToMono<String>()
-        .awaitSingleOrNull()
-        ?: throw FalhaAoBuscarAlbunsDoArtista()
+    private suspend fun chamadaApiTidal_AlbunsDoArtista(request: RequestParams, uri: URI): String {
+        var error: Exception? = null
+        repeat(2) {
+            try {
+                Logs.info("ENTRY: TidalService/chamadaApiTidal_AlbunsDoArtista", request.id)
+                return webClient
+                    .get()
+                    .uri { uri }
+                    .header("accept", "application/vnd.tidal.v1+json")
+                    .header("Authorization", authentication.headerValue)
+                    .header("Content-Type", "application/vnd.tidal.v1+json")
+                    .retrieve()
+                    .awaitBody<String>()
+            } catch (ex: Exception) {
+                error = ex
+                Logs.error(NOME_STREAMING, request.id, ex.localizedMessage)
+            }
+        }
+        throw RuntimeException(error)
+    }
 
-    private fun uriAlbunsDoArtista(requestParams: RequestParams, idArtista: String, offset: Int) = UriComponentsBuilder
-        .fromUri(URI("https://openapi.tidal.com/artists/${idArtista}/albums"))
-        .queryParam("countryCode", requestParams.regiao.name)
-        .queryParam("offset", offset)
-        .queryParam("limit", LIMIT)
-        .buildAndExpand()
-        .toUri()
+
+    private fun uriAlbunsDoArtista(requestParams: RequestParams, idArtista: String, offset: Int) =
+        UriComponentsBuilder
+            .fromUri(URI("https://openapi.tidal.com/artists/${idArtista}/albums"))
+            .queryParam("countryCode", requestParams.regiao.name)
+            .queryParam("offset", offset)
+            .queryParam("limit", LIMIT)
+            .buildAndExpand()
+            .toUri()
 
 
     private fun contarAlbunsValidos(requestParams: RequestParams, albunsNode: JsonNode): Int {

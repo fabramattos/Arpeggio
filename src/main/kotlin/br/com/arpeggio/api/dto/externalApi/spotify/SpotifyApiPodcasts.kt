@@ -4,5 +4,5 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class SpotifyApiPodcasts(
-    val items: List<SpotifyApiPodcastData>,
+    val items: List<SpotifyApiPodcastData>
 )

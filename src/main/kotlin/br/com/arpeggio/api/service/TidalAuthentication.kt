@@ -1,16 +1,15 @@
 package br.com.arpeggio.api.service
 
-import br.com.arpeggio.api.infra.exception.FalhaAoRecuperarTokenException
+import br.com.arpeggio.api.infra.exception.FalhaNaAutenticacaoException
 import br.com.arpeggio.api.infra.log.Logs
 import br.com.arpeggio.api.infra.security.AuthEncoders
 import com.fasterxml.jackson.databind.ObjectMapper
-import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
-import org.springframework.web.reactive.function.client.bodyToMono
+import org.springframework.web.reactive.function.client.awaitBodyOrNull
 
 @Component
 class TidalAuthentication(
@@ -25,24 +24,24 @@ class TidalAuthentication(
 ) {
     val headerValue get() = header
 
-    suspend fun atualizaToken(webClient: WebClient) {
-        var erros = 0
-        while(erros < 3) {
-            val chamadaApi = runCatching {
-                token = autentica(webClient)
-                header = "Bearer $token"
-            }
+    suspend fun atualizaToken(webClient: WebClient, attempt: Int = 1, maxAttempts: Int = 3) {
+        if(attempt >= maxAttempts)
+            throw FalhaNaAutenticacaoException()
 
-            chamadaApi.onSuccess {
-                Logs.authenticated("Tidal")
-                return
-            }
+        val chamadaApi = runCatching {
+            token = autentica(webClient)
+            header = "Bearer $token"
+        }
 
-            chamadaApi.onFailure {
-                erros++
-                Logs.authenticationWarn("Tidal", it.localizedMessage, erros)
-                Thread.sleep(500)
-            }
+        chamadaApi.onSuccess {
+            Logs.authenticated("Tidal")
+            return
+        }
+
+        chamadaApi.onFailure {
+            Logs.error("Tidal", 0, it.localizedMessage)
+            Thread.sleep(500)
+            atualizaToken(webClient, attempt + 1)
         }
     }
 
@@ -53,9 +52,8 @@ class TidalAuthentication(
             .contentType(MediaType.APPLICATION_FORM_URLENCODED)
             .body(BodyInserters.fromFormData("grant_type", "client_credentials"))
             .retrieve()
-            .bodyToMono<String>()
-            .awaitSingleOrNull()
-            ?: throw FalhaAoRecuperarTokenException()
+            .awaitBodyOrNull<String>()
+            ?: throw FalhaNaAutenticacaoException()
 
         return ObjectMapper()
             .readTree(json)

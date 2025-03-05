@@ -2,20 +2,15 @@ package br.com.arpeggio.api.service
 
 import br.com.arpeggio.api.dto.externalApi.deezer.*
 import br.com.arpeggio.api.dto.request.RequestParams
-import br.com.arpeggio.api.dto.response.AlbumsResponse
-import br.com.arpeggio.api.dto.response.ExternalErrorResponse
-import br.com.arpeggio.api.dto.response.PodcastsResponse
-import br.com.arpeggio.api.dto.response.SearchResults
-import br.com.arpeggio.api.infra.exception.*
+import br.com.arpeggio.api.dto.response.ItemResponse
+import br.com.arpeggio.api.infra.exception.FalhaAoBuscarAlbunsDoArtista
+import br.com.arpeggio.api.infra.exception.FalhaAoBuscarArtistasException
+import br.com.arpeggio.api.infra.exception.FalhaAoBuscarPodcastsException
+import br.com.arpeggio.api.infra.exception.PodcastNaoEncontradoException
 import br.com.arpeggio.api.infra.log.Logs
-import kotlinx.coroutines.reactor.awaitSingle
-import kotlinx.coroutines.reactor.awaitSingleOrNull
-import org.springframework.retry.annotation.Backoff
-import org.springframework.retry.annotation.Recover
-import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
-import org.springframework.web.reactive.function.client.bodyToMono
+import org.springframework.web.reactive.function.client.awaitBody
 import org.springframework.web.util.UriComponentsBuilder
 import java.net.URI
 
@@ -27,143 +22,150 @@ class DeezerService(
 ) : CommandStreamingAudio {
 
     private suspend fun buscaArtista(request: RequestParams): DeezerApiArtistData {
-        Logs.info("ENTRY: DeezerService/buscaPorArtista", request.id)
-        val uri = UriComponentsBuilder
-            .fromUri(URI("https://api.deezer.com/search/artist"))
-            .queryParam("q", request.busca)
-            .buildAndExpand()
-            .toUri()
+        repeat(2) {
+            try {
+                Logs.info("ENTRY: DeezerService/buscaPorArtista", request.id)
+                val uri = UriComponentsBuilder
+                    .fromUri(URI("https://api.deezer.com/search/artist"))
+                    .queryParam("q", request.busca)
+                    .buildAndExpand()
+                    .toUri()
 
-        return webClient
-            .get()
-            .uri { uri }
-            .retrieve()
-            .bodyToMono<DeezerApiArtistsResponse>()
-            .map { it.data }
-            .awaitSingleOrNull()
-            ?.firstOrNull()
-            ?: throw ArtistaNaoEncontradoException()
-    }
+                return webClient
+                    .get()
+                    .uri { uri }
+                    .retrieve()
+                    .awaitBody<DeezerApiArtistsResponse>()
+                    .data
+                    .first()
 
-    @Retryable(
-        value = [Exception::class],
-        maxAttempts = 3,
-        backoff = Backoff(delay = 1000),
-    )
-    private suspend fun buscaPodcasts(requestParams: RequestParams): DeezerApiPodcastData {
-        Logs.info("ENTRY: DeezerService/buscaPodcasts", requestParams.id)
-
-        val uri = UriComponentsBuilder
-            .fromUri(URI("https://api.deezer.com/search/podcast"))
-            .queryParam("q", requestParams.busca)
-            .buildAndExpand()
-            .toUri()
-
-        return webClient
-            .get()
-            .uri { uri }
-            .retrieve()
-            .bodyToMono<DeezerApiPodcastsResponse>()
-            .map { it.data }
-            .awaitSingle()
-            ?.first()
-            ?: throw PodcastNaoEncontradoException()
-    }
-
-    private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: Int): List<DeezerApiAlbumData> {
-        Logs.info("ENTRY: DeezerService/buscaPorArtista", requestParams.id)
-        val uri = UriComponentsBuilder
-            .fromUri(URI("https://api.deezer.com/artist/$idArtista/albums"))
-            .queryParam("limit", 999)
-            .buildAndExpand()
-            .toUri()
-
-        return webClient
-            .get()
-            .uri { uri }
-            .retrieve()
-            .bodyToMono<DeezerApiAlbumsResponse>()
-            .map { it.data }
-            .awaitSingleOrNull()
-            ?.filter { album ->
-                requestParams.tipos.any { album.record_type.equals(it.name, true) }
-            }
-            ?: throw FalhaAoBuscarAlbunsDoArtista()
-    }
-
-
-    @Retryable(
-        value = [RuntimeException::class],
-        maxAttempts = 3,
-        backoff = Backoff(delay = 1000),
-    )
-    private suspend fun buscaEpisodiosDoPodcast(requestParam: RequestParams, idPodcast: Int): Int {
-        Logs.info("ENTRY: DeezerService/buscaEpisodiosDoPodcast", requestParam.id)
-
-        val uri = UriComponentsBuilder
-            .fromUri(URI("https://api.deezer.com/podcast/$idPodcast/episodes"))
-            .buildAndExpand()
-            .toUri()
-
-        return webClient
-            .get()
-            .uri { uri }
-            .retrieve()
-            .bodyToMono<DeezerApiAlbumsResponse>()
-            .map { it.total }
-            .awaitSingle()
-            ?: throw FalhaAoBuscarPodcastsException()
-    }
-
-
-    override suspend fun buscaPorArtista(requestParams: RequestParams): SearchResults {
-        Logs.info("ENTRY: DeezerService/buscaPorArtista", requestParams.id)
-        var erros = 0
-        while (erros < 3) {
-            val response = runCatching {
-                val artista = buscaArtista(requestParams)
-                val totalDeAlbuns = buscaAlbunsDoArtista(requestParams, artista.id).size
-                return AlbumsResponse(NOME_STREAMING, artista.name, totalDeAlbuns)
-            }
-
-            response.onFailure {
-                erros++
-                Logs.warn(NOME_STREAMING, requestParams.id.toString(), it.localizedMessage)
-                if (it is ArtistaNaoEncontradoException)
-                    return ExternalErrorResponse(NOME_STREAMING, it.localizedMessage)
-
-                Thread.sleep(1000)
+            } catch (ex: Exception) {
+                Logs.warn(NOME_STREAMING, request.id, ex.localizedMessage)
+                Thread.sleep(500)
             }
         }
-        return ExternalErrorResponse(
-            NOME_STREAMING,
-            FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).localizedMessage
-        )
+        throw FalhaAoBuscarArtistasException()
     }
 
-    override suspend fun buscaPorPodcast(requestParams: RequestParams): SearchResults {
+    private suspend fun buscaPodcasts(requestParams: RequestParams): DeezerApiPodcastData {
+        repeat(2) {
+            try {
+                Logs.info("ENTRY: DeezerService/buscaPodcasts", requestParams.id)
+
+                val uri = UriComponentsBuilder
+                    .fromUri(URI("https://api.deezer.com/search/podcast"))
+                    .queryParam("q", requestParams.busca)
+                    .buildAndExpand()
+                    .toUri()
+
+                return webClient
+                    .get()
+                    .uri { uri }
+                    .retrieve()
+                    .awaitBody<DeezerApiPodcastsResponse>()
+                    .data
+                    .first()
+
+            } catch (ex: Exception) {
+                Logs.warn(NOME_STREAMING, requestParams.id, ex.localizedMessage)
+                Thread.sleep(500)
+            }
+        }
+        throw PodcastNaoEncontradoException()
+    }
+
+
+    private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: Int): List<DeezerApiAlbumData> {
+        repeat(2) {
+            try {
+                Logs.info("ENTRY: DeezerService/buscaPorArtista", requestParams.id)
+                val uri = UriComponentsBuilder
+                    .fromUri(URI("https://api.deezer.com/artist/$idArtista/albums"))
+                    .queryParam("limit", 999)
+                    .buildAndExpand()
+                    .toUri()
+
+                return webClient
+                    .get()
+                    .uri { uri }
+                    .retrieve()
+                    .awaitBody<DeezerApiAlbumsResponse>()
+                    .data
+                    .filter { album ->
+                        requestParams.tipos.any { album.record_type.equals(it.name, true) }
+                    }
+
+            } catch (ex: Exception) {
+                Logs.error(NOME_STREAMING, requestParams.id, ex.localizedMessage)
+                Thread.sleep(500)
+            }
+        }
+        throw FalhaAoBuscarAlbunsDoArtista()
+    }
+
+
+    private suspend fun buscaEpisodiosDoPodcast(requestParam: RequestParams, idPodcast: Int): Int {
+        repeat(2) {
+            try {
+                Logs.info("ENTRY: DeezerService/buscaEpisodiosDoPodcast", requestParam.id)
+
+                val uri = UriComponentsBuilder
+                    .fromUri(URI("https://api.deezer.com/podcast/$idPodcast/episodes"))
+                    .buildAndExpand()
+                    .toUri()
+
+                return webClient
+                    .get()
+                    .uri { uri }
+                    .retrieve()
+                    .awaitBody<DeezerApiAlbumsResponse>()
+                    .total
+            } catch (ex: Exception) {
+                Logs.error(NOME_STREAMING, requestParam.id, ex.localizedMessage)
+                Thread.sleep(500)
+            }
+        }
+        throw FalhaAoBuscarPodcastsException()
+    }
+
+
+    override suspend fun buscaPorArtista(requestParams: RequestParams): ItemResponse {
+        Logs.info("ENTRY: DeezerService/buscaPorArtista", requestParams.id)
+        try {
+            val artista = buscaArtista(requestParams)
+            val totalDeAlbuns = buscaAlbunsDoArtista(requestParams, artista.id).size
+            return ItemResponse(
+                streaming = NOME_STREAMING,
+                consulta = artista.name,
+                albuns = totalDeAlbuns
+            )
+        } catch (ex: Exception) {
+            return ItemResponse(
+                streaming = NOME_STREAMING,
+                consulta = requestParams.busca,
+                erro = ex.localizedMessage
+            )
+        }
+    }
+
+    override suspend fun buscaPorPodcast(requestParams: RequestParams): ItemResponse {
         Logs.info("ENTRY: DeezerService/buscaPorPodcast", requestParams.id)
-        val podcast = buscaPodcasts(requestParams)
-        val totalDeEpisodios = buscaEpisodiosDoPodcast(requestParams, podcast.id)
-        return PodcastsResponse(NOME_STREAMING, podcast.title, totalDeEpisodios)
+        try {
+            val podcast = buscaPodcasts(requestParams)
+            val totalDeEpisodios = buscaEpisodiosDoPodcast(requestParams, podcast.id)
+            return ItemResponse(
+                streaming = NOME_STREAMING,
+                consulta = podcast.title,
+                episodios = totalDeEpisodios
+            )
+        } catch (ex: Exception) {
+            return ItemResponse(
+                streaming = NOME_STREAMING,
+                consulta = requestParams.busca,
+                erro = ex.localizedMessage
+            )
+        }
     }
-
-
-    @Recover
-    private fun buscaEpisodiosDoPodcastRecover(
-        runtimeException: RuntimeException,
-        idPodcast: Int
-    ): ExternalErrorResponse {
-        return ExternalErrorResponse(NOME_STREAMING, "erro ao tentar calcular episódios")
-
-    }
-
-    @Recover
-    private fun buscaEpisodiosDoPodcastRecover(exception: Exception, nome: String): ExternalErrorResponse {
-        return ExternalErrorResponse(NOME_STREAMING, "erro ao tentar calcular episódios")
-
-    }
-
 }
 
 

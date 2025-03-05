@@ -1,26 +1,22 @@
 package br.com.arpeggio.api.service
 
-import br.com.arpeggio.api.dto.response.SearchResults
-import br.com.arpeggio.api.dto.response.AlbumsResponse
-import br.com.arpeggio.api.dto.response.PodcastsResponse
-import br.com.arpeggio.api.dto.response.ExternalErrorResponse
 import br.com.arpeggio.api.dto.externalApi.spotify.*
 import br.com.arpeggio.api.dto.request.RequestParams
 import br.com.arpeggio.api.dto.request.RequestTipo
-import br.com.arpeggio.api.infra.exception.*
+import br.com.arpeggio.api.dto.response.ItemResponse
+import br.com.arpeggio.api.infra.exception.FalhaAoBuscarAlbunsDoArtista
 import br.com.arpeggio.api.infra.log.Logs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
-import org.springframework.web.reactive.function.client.bodyToMono
+import org.springframework.web.reactive.function.client.awaitBody
 import org.springframework.web.util.UriComponentsBuilder
 import java.net.URI
 
-private const val VALIDADE_TOKEN = 3600*1000L
+private const val VALIDADE_TOKEN = 3600 * 1000L
 
 @Service
 class SpotifyService(
@@ -37,122 +33,145 @@ class SpotifyService(
             }
     }
 
+    suspend fun buscaArtista(requestParams: RequestParams): SpotifyApiArtistData {
+        var error: Exception? = null
+        repeat(2) {
+            try {
+                Logs.info("ENTRY: SpotifyService/buscaArtista", requestParams.id)
+                val uri = UriComponentsBuilder
+                    .fromUri(URI("https://api.spotify.com/v1/search"))
+                    .queryParam("q", requestParams.busca)
+                    .queryParam("type", "artist")
+                    .queryParam("market", requestParams.regiao.name)
+                    .queryParam("limit", 3)
+                    .buildAndExpand()
+                    .toUri()
 
-    private suspend fun buscaArtista(requestParams: RequestParams): SpotifyApiArtistData {
-        Logs.info("ENTRY: SpotifyService/buscaArtista", requestParams.id)
-        val uri = UriComponentsBuilder
-            .fromUri(URI("https://api.spotify.com/v1/search"))
-            .queryParam("q", requestParams.busca)
-            .queryParam("type", "artist")
-            .queryParam("market", requestParams.regiao.name)
-            .queryParam("limit", 3)
-            .buildAndExpand()
-            .toUri()
+                return webClient
+                    .get()
+                    .uri { uri }
+                    .header("Authorization", authentication.headerValue)
+                    .retrieve()
+                    .awaitBody<SpotifyApiArtistsResponse>()
+                    .artists.items
+                    .first()
 
-        return webClient
-            .get()
-            .uri{uri}
-            .header("Authorization", authentication.headerValue)
-            .retrieve()
-            .bodyToMono<SpotifyApiArtistsResponse>()
-            .map { it.artists.items }
-            .awaitSingleOrNull()
-            ?.first()
-            ?: throw ArtistaNaoEncontradoException()
+            } catch (ex: Exception) {
+                error = ex
+                if (ex.localizedMessage.contains("401")) {
+                    Logs.authenticationWarn(NOME_STREAMING)
+                    authentication.atualizaToken(webClient)
+                } else {
+                    Logs.error(NOME_STREAMING, requestParams.id, ex.localizedMessage)
+                    return@repeat
+                }
+            }
+        }
+        throw Exception(error)
     }
 
-    private suspend fun buscaPodcasts(requestParams: RequestParams): SpotifyApiPodcastData {
-        Logs.info("ENTRY: SpotifyService/buscaPodcasts", requestParams.id)
-        val uri = UriComponentsBuilder
-            .fromUri(URI("https://api.spotify.com/v1/search"))
-            .queryParam("q", requestParams.busca)
-            .queryParam("type", "show")
-            .queryParam("market", requestParams.regiao.name)
-            .queryParam("limit", 3)
-            .buildAndExpand()
-            .toUri()
 
-        return webClient
-            .get()
-            .uri{uri}
-            .header("Authorization", authentication.headerValue)
-            .retrieve()
-            .bodyToMono<SpotifyApiPodcastsResponse>()
-            .map { it.shows.items }
-            .awaitSingleOrNull()
-            ?.first()
-            ?: throw PodcastNaoEncontradoException()
+    suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: String): SpotifyApiAlbumsResponse {
+        repeat(2) {
+            try {
+                Logs.info("ENTRY: SpotifyService/buscaAlbunsDoArtista", requestParams.id)
+                val uri = UriComponentsBuilder
+                    .fromUri(URI("https://api.spotify.com/v1/artists/${idArtista}/albums"))
+                    .queryParam("include_groups", retornaTipos(requestParams))
+                    .queryParam("market", requestParams.regiao.valor)
+                    .queryParam("limit", 1)
+                    .buildAndExpand()
+                    .toUri()
+
+                return webClient
+                    .get()
+                    .uri { uri }
+                    .header("Authorization", authentication.headerValue)
+                    .retrieve()
+                    .awaitBody<SpotifyApiAlbumsResponse>()
+
+            } catch (ex: Exception) {
+                Logs.error(NOME_STREAMING, requestParams.id, ex.localizedMessage)
+                Thread.sleep(500)
+            }
+        }
+        throw FalhaAoBuscarAlbunsDoArtista()
     }
 
-    private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: String): SpotifyApiAlbumsResponse {
-        Logs.info("ENTRY: SpotifyService/buscaAlbunsDoArtista", requestParams.id)
-        val uri = UriComponentsBuilder
-            .fromUri(URI("https://api.spotify.com/v1/artists/${idArtista}/albums"))
-            .queryParam("include_groups", retornaTipos(requestParams))
-            .queryParam("market", requestParams.regiao.valor)
-            .queryParam("limit", 1)
-            .buildAndExpand()
-            .toUri()
-
-        return webClient
-            .get()
-            .uri{uri}
-            .header("Authorization", authentication.headerValue)
-            .retrieve()
-            .bodyToMono<SpotifyApiAlbumsResponse>()
-            .awaitSingleOrNull()
-            ?: throw FalhaAoBuscarAlbunsDoArtista()
-    }
-
-    override suspend fun buscaPorArtista(requestParams: RequestParams): SearchResults {
+    override suspend fun buscaPorArtista(requestParams: RequestParams): ItemResponse {
         Logs.info("ENTRY: SpotifyService/buscaPorArtista", requestParams.id)
-        var erros = 0
-        while (erros < 3) {
-            val resultado = runCatching {
-                val artista = buscaArtista(requestParams)
-                val totalDeAlbuns = buscaAlbunsDoArtista(requestParams, artista.id).total
-                return AlbumsResponse(NOME_STREAMING, artista.name, totalDeAlbuns)
-            }
-
-            resultado.onFailure {
-                erros++
-                Logs.warn(NOME_STREAMING, requestParams.id.toString(), it.localizedMessage)
-                if (it is ArtistaNaoEncontradoException)
-                    return ExternalErrorResponse(NOME_STREAMING, it.localizedMessage)
-
-                if (it.localizedMessage.contains("401"))
-                    authentication.atualizaToken(webClient)
-            }
+        try {
+            val artista = buscaArtista(requestParams)
+            val totalDeAlbuns = buscaAlbunsDoArtista(requestParams, artista.id).total
+            return ItemResponse(
+                streaming = NOME_STREAMING,
+                consulta = artista.name,
+                albuns = totalDeAlbuns
+            )
+        } catch (ex: Exception) {
+            return ItemResponse(
+                streaming = NOME_STREAMING,
+                consulta = requestParams.busca,
+                erro = ex.localizedMessage
+            )
         }
-        return ExternalErrorResponse(
-            NOME_STREAMING,
-            FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).localizedMessage
-        )
     }
 
-    override suspend fun buscaPorPodcast(requestParams: RequestParams): SearchResults {
-        Logs.info("ENTRY: SpotifyService/buscaPorPodcast", requestParams.id)
-        var erros = 0
-        while (erros < 3) {
-            val resultado = runCatching {
-                val podcast = buscaPodcasts(requestParams)
-                return PodcastsResponse(NOME_STREAMING, podcast.name, podcast.total_episodes)
-            }
+    suspend fun buscaPodcasts(requestParams: RequestParams): SpotifyApiPodcastData {
+        var error: Exception? = null
+        repeat(2) {
+            try {
+                Logs.info("ENTRY: SpotifyService/buscaPodcasts", requestParams.id)
+                val uri = UriComponentsBuilder
+                    .fromUri(URI("https://api.spotify.com/v1/search"))
+                    .queryParam("q", requestParams.busca)
+                    .queryParam("type", "show")
+                    .queryParam("market", requestParams.regiao.name)
+                    .queryParam("limit", 3)
+                    .buildAndExpand()
+                    .toUri()
 
-            resultado.onFailure {
-                erros++
-                Logs.warn(NOME_STREAMING, requestParams.id.toString(), it.localizedMessage)
-                if (it is PodcastNaoEncontradoException)
-                    return ExternalErrorResponse(NOME_STREAMING, it.localizedMessage)
+                return webClient
+                    .get()
+                    .uri { uri }
+                    .header("Authorization", authentication.headerValue)
+                    .retrieve()
+                    .awaitBody<SpotifyApiPodcastsResponse>()
+                    .shows.items
+                    .first()
 
-                if (it.localizedMessage.contains("401"))
+            } catch (ex: Exception) {
+                error = ex
+                if (ex.localizedMessage.contains("401")) {
+                    Logs.authenticationWarn(NOME_STREAMING)
                     authentication.atualizaToken(webClient)
+                } else {
+                    Logs.error(NOME_STREAMING, requestParams.id, ex.localizedMessage)
+                    return@repeat
+                }
             }
         }
-        return ExternalErrorResponse(
-            NOME_STREAMING,
-            FalhaNaRequisicaoAoStreamingException(NOME_STREAMING).localizedMessage
-        )
+        throw Exception(error)
+    }
+
+
+    override suspend fun buscaPorPodcast(requestParams: RequestParams): ItemResponse {
+        Logs.info("ENTRY: SpotifyService/buscaPorPodcast", requestParams.id)
+        try {
+            val podcast = buscaPodcasts(requestParams)
+            return ItemResponse(
+                streaming = NOME_STREAMING,
+                consulta = podcast.name,
+                episodios = podcast.total_episodes
+            )
+
+        } catch (ex: Exception) {
+            return ItemResponse(
+                streaming = NOME_STREAMING,
+                consulta = requestParams.busca,
+                erro = ex.localizedMessage
+            )
+        }
     }
 
 

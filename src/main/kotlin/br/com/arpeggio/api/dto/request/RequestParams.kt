@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger
 data class RequestParams(
     val busca: String,
     val regiao: RequestRegiao,
-    val tipos: List<RequestTipo>
+    val tipos: List<RequestTipo>,
 ){
     val id: Int = generateId()
 
