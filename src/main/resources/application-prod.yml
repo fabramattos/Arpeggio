@@ -8,4 +8,4 @@ server:
 
 logging:
   level:
-    root: WARN
+    root: info
