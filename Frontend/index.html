@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,9 +10,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div class="background-glow"></div>
-    
+
     <header>
         <nav>
             <div class="logo">Arpeggio</div>
@@ -21,24 +23,39 @@
     <main>
         <section class="hero">
             <h1>Descubra o Streaming Ideal para Você</h1>
-            <p class="subtitle">Compare a disponibilidade de álbuns dos seus artistas favoritos entre Spotify, Apple Music, Deezer e Tidal.</p>
+            <p class="subtitle">Compare a disponibilidade de álbuns dos seus artistas favoritos entre Spotify, Apple
+                Music, Deezer e Tidal.</p>
         </section>
 
         <section class="intro-cards">
             <div class="card info-card">
                 <h3>Por que comparar?</h3>
-                <p>Você já se perguntou por que existem tantos serviços de streaming de música, todos com preços semelhantes mas com conteúdos diferentes? Nosso comparador foi criado para facilitar sua escolha.</p>
+                <p>Você já se perguntou por que existem tantos serviços de streaming de música, todos com preços
+                    semelhantes mas com conteúdos diferentes? Nosso comparador foi criado para facilitar sua escolha.
+                </p>
             </div>
             <div class="card info-card">
                 <h3>Como funciona</h3>
-                <p>Basta buscar por um artista ou banda e em instantes você terá acesso à quantidade de álbuns disponíveis em cada plataforma. Tome uma decisão informada sobre qual serviço assinar.</p>
+                <p>Basta buscar por um artista ou banda e em instantes você terá acesso à quantidade de álbuns
+                    disponíveis em cada plataforma. Tome uma decisão informada sobre qual serviço assinar.</p>
             </div>
         </section>
 
         <section class="search-section">
-            <div class="search-container">
-                <input type="text" id="artistInput" placeholder="Digite o nome do artista ou banda..." autocomplete="off">
-                <button id="searchBtn">Comparar</button>
+            <div class="search-wrapper">
+                <div class="search-container">
+                    <input type="text" id="artistInput" placeholder="O que você quer ouvir hoje?" autocomplete="off">
+
+                    <div class="search-type-selector">
+                        <input type="radio" id="typeArtist" name="searchType" value="artist" checked>
+                        <label for="typeArtist">Artista</label>
+
+                        <input type="radio" id="typePodcast" name="searchType" value="podcast">
+                        <label for="typePodcast">Podcast</label>
+                    </div>
+
+                    <button id="searchBtn">Comparar</button>
+                </div>
             </div>
         </section>
 
@@ -54,7 +71,8 @@
             <div class="platforms-grid">
                 <div class="platform-card">
                     <h3>Spotify</h3>
-                    <p>O maior serviço de streaming de música do mundo, com um vasto catálogo de artistas e bandas dos mais variados gêneros.</p>
+                    <p>O maior serviço de streaming de música do mundo, com um vasto catálogo de artistas e bandas dos
+                        mais variados gêneros.</p>
                 </div>
                 <div class="platform-card">
                     <h3>Apple Music</h3>
@@ -62,11 +80,13 @@
                 </div>
                 <div class="platform-card">
                     <h3>Deezer</h3>
-                    <p>Foco maior em descoberta de músicas, oferecendo uma ampla variedade de faixas e playlists personalizadas.</p>
+                    <p>Foco maior em descoberta de músicas, oferecendo uma ampla variedade de faixas e playlists
+                        personalizadas.</p>
                 </div>
                 <div class="platform-card">
                     <h3>Tidal</h3>
-                    <p>Conhecido por oferecer músicas em alta qualidade e conteúdo exclusivo para amantes de alta fidelidade.</p>
+                    <p>Conhecido por oferecer músicas em alta qualidade e conteúdo exclusivo para amantes de alta
+                        fidelidade.</p>
                 </div>
             </div>
         </section>
@@ -78,4 +98,5 @@
 
     <script src="main.js"></script>
 </body>
+
 </html>

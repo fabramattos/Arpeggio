@@ -1,0 +1,25 @@
+{
+  "name": "arpeggio",
+  "version": "1.0.0",
+  "description": "overview readme",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fabramattos/Arpeggio.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/fabramattos/Arpeggio/issues"
+  },
+  "homepage": "https://github.com/fabramattos/Arpeggio#readme",
+  "devDependencies": {
+    "vite": "^7.2.4"
+  }
+}

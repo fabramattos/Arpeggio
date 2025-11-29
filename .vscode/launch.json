@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Open Frontend (Local Server)",
+            "url": "http://localhost:8080",
+            "webRoot": "${workspaceFolder}/Frontend",
+            "preLaunchTask": "Start Frontend Server"
+        }
+    ]
+}
