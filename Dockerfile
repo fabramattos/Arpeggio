@@ -1,4 +1,4 @@
-FROM openjdk:20
+FROM openjdk:21-ea-1-jdk-oracle
 LABEL authors = "Felipe Mattos"
 WORKDIR /app
 COPY  build/libs/*.jar /app/app.jar

@@ -32,13 +32,13 @@ class TidalService(
     private val webClient: WebClient,
 ) : CommandStreamingAudio {
 
-    @Scheduled(fixedRate = VALIDADE_TOKEN)
-    fun atualizaToken() {
-        CoroutineScope(Dispatchers.Default)
-            .launch {
-                authentication.atualizaToken(webClient)
-            }
-    }
+//    @Scheduled(fixedRate = VALIDADE_TOKEN)
+//    fun atualizaToken() {
+//        CoroutineScope(Dispatchers.Default)
+//            .launch {
+//                authentication.atualizaToken(webClient)
+//            }
+//    }
 
     override suspend fun buscaPorArtista(requestParams: RequestParams): ItemResponse {
         Logs.info("ENTRY: TidalService/buscaPorArtista", requestParams.id)
@@ -90,7 +90,7 @@ class TidalService(
         var error: Exception? = null
         repeat(2) {
             try {
-                Logs.info("ENTRY: TidalService/ChamadaApiTidal_BuscaArtistas", requestParams.id)
+                Logs.info("ENTRY: TidalService/chamadaApiTidal_BuscaArtistas", requestParams.id)
                 webClient
                     .get()
                     .uri { uri }
@@ -110,8 +110,7 @@ class TidalService(
 
 
     private fun uriBuscaArtistas(requestParams: RequestParams) = UriComponentsBuilder
-        .fromUri(URI("https://openapi.tidal.com/search"))
-        .queryParam("query", requestParams.busca)
+        .fromUri(URI("https://openapi.tidal.com/v2/searchresults/${requestParams.busca}"))
         .queryParam("type", "ARTISTS")
         .queryParam("offset", 0)
         .queryParam("limit", 3)
