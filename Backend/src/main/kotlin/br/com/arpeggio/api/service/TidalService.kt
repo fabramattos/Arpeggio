@@ -5,14 +5,12 @@ import br.com.arpeggio.api.dto.request.RequestParams
 import br.com.arpeggio.api.dto.request.RequestTipo
 import br.com.arpeggio.api.dto.response.ItemResponse
 import br.com.arpeggio.api.infra.exception.ArtistaNaoEncontradoException
+import br.com.arpeggio.api.infra.exception.FalhaAoBuscarAlbunsDoArtista
+import br.com.arpeggio.api.infra.exception.FalhaAoBuscarArtistasException
 import br.com.arpeggio.api.infra.exception.FalhaInformacoesImprecisasDireitosAutoraisException
 import br.com.arpeggio.api.infra.log.Logs
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
@@ -55,7 +53,7 @@ class TidalService(
             return ItemResponse(
                 streaming = NOME_STREAMING,
                 consulta = requestParams.busca,
-                erro = ex.localizedMessage
+                erro = ex.message
             )
         }
     }
@@ -72,26 +70,29 @@ class TidalService(
         val uri = uriBuscaArtistas(requestParams)
         val response = chamadaApiTidal_BuscaArtistas(requestParams, uri)
 
-        val artistaDados = ObjectMapper()
-            .readTree(response)
-            .path("artists") // array de artistas. Dentro, RESOURCES contem os dados de cada artista retornado
-            .first()
-            .path("resource")
-            ?: throw ArtistaNaoEncontradoException()
+        try {
+            val artistaDados = ObjectMapper()
+                .readTree(response)
+                .path("artists") // array de artistas. Dentro, RESOURCES contem os dados de cada artista retornado
+                .first()
+                .path("resource")
+                ?: throw ArtistaNaoEncontradoException()
 
-        return TidalResult(
-            artistaDados.path("id").asText(),
-            artistaDados.path("name").asText(),
-            0
-        )
+            return TidalResult(
+                artistaDados.path("id").asText(),
+                artistaDados.path("name").asText(),
+                0
+            )
+        }catch (ex: Exception){
+            throw FalhaAoBuscarAlbunsDoArtista()
+        }
     }
 
     private suspend fun chamadaApiTidal_BuscaArtistas(requestParams: RequestParams, uri: URI): String {
-        var error: Exception? = null
         repeat(2) {
             try {
                 Logs.info("ENTRY: TidalService/chamadaApiTidal_BuscaArtistas", requestParams.id)
-                webClient
+                return webClient
                     .get()
                     .uri { uri }
                     .header("accept", "application/vnd.tidal.v1+json")
@@ -100,23 +101,27 @@ class TidalService(
                     .retrieve()
                     .awaitBody<String>()
             } catch (ex: Exception) {
-                error = ex
                 Logs.error(NOME_STREAMING, requestParams.id, ex.localizedMessage)
                 authentication.atualizaToken(webClient)
             }
         }
-        throw RuntimeException(error)
+        throw FalhaAoBuscarArtistasException()
     }
 
 
-    private fun uriBuscaArtistas(requestParams: RequestParams) = UriComponentsBuilder
-        .fromUri(URI("https://openapi.tidal.com/v2/searchresults/${requestParams.busca}"))
-        .queryParam("type", "ARTISTS")
-        .queryParam("offset", 0)
-        .queryParam("limit", 3)
-        .queryParam("countryCode", requestParams.regiao.name)
-        .buildAndExpand()
-        .toUri()
+    private fun uriBuscaArtistas(requestParams: RequestParams) =
+        try{
+            UriComponentsBuilder
+                .fromUri(URI("https://openapi.tidal.com/v2/searchresults/${requestParams.busca}"))
+                .queryParam("type", "ARTISTS")
+                .queryParam("offset", 0)
+                .queryParam("limit", 3)
+                .queryParam("countryCode", requestParams.regiao.name)
+                .buildAndExpand()
+                .toUri()
+        } catch (ex: Exception){
+            throw RuntimeException("Erro na url da api Tidal")
+        }
 
 
     private suspend fun buscaAlbunsDoArtista(requestParams: RequestParams, idArtista: String): Int {
@@ -153,7 +158,7 @@ class TidalService(
                     errosReq++
                     Thread.sleep(DELAY_RETRY)
                 } else
-                    throw it
+                    throw FalhaAoBuscarAlbunsDoArtista()
             }
         }
         return totalAlbuns

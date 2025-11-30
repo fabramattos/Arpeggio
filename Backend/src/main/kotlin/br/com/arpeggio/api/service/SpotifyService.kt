@@ -5,6 +5,8 @@ import br.com.arpeggio.api.dto.request.RequestParams
 import br.com.arpeggio.api.dto.request.RequestTipo
 import br.com.arpeggio.api.dto.response.ItemResponse
 import br.com.arpeggio.api.infra.exception.FalhaAoBuscarAlbunsDoArtista
+import br.com.arpeggio.api.infra.exception.FalhaAoBuscarArtistasException
+import br.com.arpeggio.api.infra.exception.FalhaAoBuscarPodcastsException
 import br.com.arpeggio.api.infra.log.Logs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,7 +36,6 @@ class SpotifyService(
     }
 
     suspend fun buscaArtista(requestParams: RequestParams): SpotifyApiArtistData {
-        var error: Exception? = null
         repeat(2) {
             try {
                 Logs.info("ENTRY: SpotifyService/buscaArtista", requestParams.id)
@@ -57,7 +58,6 @@ class SpotifyService(
                     .first()
 
             } catch (ex: Exception) {
-                error = ex
                 if (ex.localizedMessage.contains("401")) {
                     Logs.authenticationWarn(NOME_STREAMING)
                     authentication.atualizaToken(webClient)
@@ -67,7 +67,7 @@ class SpotifyService(
                 }
             }
         }
-        throw Exception(error)
+        throw FalhaAoBuscarArtistasException()
     }
 
 
@@ -112,13 +112,12 @@ class SpotifyService(
             return ItemResponse(
                 streaming = NOME_STREAMING,
                 consulta = requestParams.busca,
-                erro = ex.localizedMessage
+                erro = ex.message
             )
         }
     }
 
     suspend fun buscaPodcasts(requestParams: RequestParams): SpotifyApiPodcastData {
-        var error: Exception? = null
         repeat(2) {
             try {
                 Logs.info("ENTRY: SpotifyService/buscaPodcasts", requestParams.id)
@@ -141,7 +140,6 @@ class SpotifyService(
                     .first()
 
             } catch (ex: Exception) {
-                error = ex
                 if (ex.localizedMessage.contains("401")) {
                     Logs.authenticationWarn(NOME_STREAMING)
                     authentication.atualizaToken(webClient)
@@ -151,7 +149,7 @@ class SpotifyService(
                 }
             }
         }
-        throw Exception(error)
+        throw FalhaAoBuscarPodcastsException()
     }
 
 
@@ -169,7 +167,7 @@ class SpotifyService(
             return ItemResponse(
                 streaming = NOME_STREAMING,
                 consulta = requestParams.busca,
-                erro = ex.localizedMessage
+                erro = ex.message
             )
         }
     }

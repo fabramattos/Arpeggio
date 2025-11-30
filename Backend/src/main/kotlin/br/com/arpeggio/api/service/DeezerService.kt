@@ -5,8 +5,8 @@ import br.com.arpeggio.api.dto.request.RequestParams
 import br.com.arpeggio.api.dto.response.ItemResponse
 import br.com.arpeggio.api.infra.exception.FalhaAoBuscarAlbunsDoArtista
 import br.com.arpeggio.api.infra.exception.FalhaAoBuscarArtistasException
+import br.com.arpeggio.api.infra.exception.FalhaAoBuscarDetalhesPodcastException
 import br.com.arpeggio.api.infra.exception.FalhaAoBuscarPodcastsException
-import br.com.arpeggio.api.infra.exception.PodcastNaoEncontradoException
 import br.com.arpeggio.api.infra.log.Logs
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
@@ -71,7 +71,7 @@ class DeezerService(
                 Thread.sleep(500)
             }
         }
-        throw PodcastNaoEncontradoException()
+        throw FalhaAoBuscarPodcastsException()
     }
 
 
@@ -125,7 +125,7 @@ class DeezerService(
                 Thread.sleep(500)
             }
         }
-        throw FalhaAoBuscarPodcastsException()
+        throw FalhaAoBuscarDetalhesPodcastException()
     }
 
 
@@ -143,7 +143,7 @@ class DeezerService(
             return ItemResponse(
                 streaming = NOME_STREAMING,
                 consulta = requestParams.busca,
-                erro = ex.localizedMessage
+                erro = ex.message
             )
         }
     }
@@ -162,7 +162,7 @@ class DeezerService(
             return ItemResponse(
                 streaming = NOME_STREAMING,
                 consulta = requestParams.busca,
-                erro = ex.localizedMessage
+                erro = ex.message
             )
         }
     }
